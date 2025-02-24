@@ -32,7 +32,7 @@ var
 
 implementation
 
-uses UnitGera_Sql;
+uses Frm_Principal;
 
 {$R *.dfm}
 
@@ -54,16 +54,16 @@ end;
 
 procedure TFrmConecta.Button4Click(Sender: TObject);
 begin
-     FrmGera_Sql.IBDatabase.Connected := False;
-     FrmGera_Sql.IBDatabase.Params.Clear;
-     FrmGera_Sql.IBDatabase.DatabaseName := edtServer.Text + ':' + EdtCaminho.Text;
-     FrmGera_Sql.IBDatabase.Params.Add( 'USER_NAME=' + EdtUser.Text );
-     FrmGera_Sql.IBDatabase.Params.Add( 'password=' + EdtPassWord.Text );
-     FrmGera_Sql.IBDatabase.Connected := True;
-
-     Grava_Ini( ExtractFilePath( Application.ExeName ) + 'GERARSQL.ini' , 'CONFIGURACOES', 'CAMINHO', EdtCaminho.Text );
-
-     ModalResult := MrOk;
+//     FrmGera_Sql.Cxo.Connected := False;
+//     FrmGera_Sql.Cxo.Params.Clear;
+//     FrmGera_Sql.Cxo.Params.Database := edtServer.Text + ':' + EdtCaminho.Text;
+//     FrmGera_Sql.Cxo.Params.UserName := EdtUser.Text;
+//     FrmGera_Sql.Cxo.Params.Password := EdtPassWord.Text;
+//     FrmGera_Sql.Cxo.Connected := True;
+//
+//     Grava_Ini( ExtractFilePath( Application.ExeName ) + 'GERARSQL.ini' , 'CONFIGURACOES', 'CAMINHO', EdtCaminho.Text );
+//
+//     ModalResult := MrOk;
 end;
 
 procedure TFrmConecta.FormShow(Sender: TObject);

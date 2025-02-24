@@ -1,65 +1,23 @@
-unit UnitGera_Sql;
+unit Frm_Principal;
 
 interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, DB, IBCustomDataSet, IBQuery,
-  IBDatabase, ComCtrls, Grids, DBGrids, IBSQL, FireDAC.UI.Intf, FireDAC.VCLUI.Login, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.VCLUI.Wait, FireDAC.Comp.Client, FireDAC.Comp.UI, FireDAC.Phys.FB, FireDAC.Phys.FBDef;
+  IBDatabase, ComCtrls, Grids, DBGrids, IBSQL, FireDAC.UI.Intf,
+  FireDAC.VCLUI.Login, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
+  FireDAC.VCLUI.Wait, FireDAC.Comp.Client, FireDAC.Comp.UI, FireDAC.Phys.FB, FireDAC.Phys.FBDef,
+  Vcl.DBCtrls, FireDAC.Phys.IBBase, Datasnap.DBClient, FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet;
 
 type
-  TFrmGera_Sql = class(TForm)
-    Label1: TLabel;
-    LstCampos: TListBox;
-    LbCampos: TLabel;
-    Label5: TLabel;
-    LstTabelas_Selecionadas: TListBox;
-    BtnAdd: TButton;
-    BtnAddAll: TButton;
-    BtnRem: TButton;
-    BtnRemAll: TButton;
-    CmbTabelas: TComboBox;
-    Label6: TLabel;
-    LstCampos_Filtro: TListBox;
-    Button1: TButton;
-    Button2: TButton;
-    Button3: TButton;
-    IBDatabase: TIBDatabase;
-    IBTransaction: TIBTransaction;
-    Query: TIBQuery;
-    Query2: TIBQuery;
+  TFrmPrincipal = class(TForm)
     PageControl1: TPageControl;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
     MemScript: TMemo;
     GrdConsulta: TDBGrid;
-    DS_Query_Relatorio: TDataSource;
-    Query_Relatorio: TIBQuery;
-    PCCondicao_Ordem: TPageControl;
-    TabSheet3: TTabSheet;
-    TabSheet4: TTabSheet;
-    LstFiltro: TListBox;
-    CmbCondicao: TComboBox;
-    CmbOrdem: TComboBox;
-    LstOrdem: TListBox;
-    GBCampos_Selecionados: TPageControl;
-    TabSheet5: TTabSheet;
-    TabSheet6: TTabSheet;
-    LstCampos_Selecionados: TListBox;
-    LstCampos_Agregados: TListBox;
-    CmbFuncao: TComboBox;
-    TabSheet7: TTabSheet;
-    LstFiltro_Campos_Agregados: TListBox;
-    CmbCondicao_Agregados: TComboBox;
-    IBSQL: TIBSQL;
-    TabSheet8: TTabSheet;
-    EdtFirst: TEdit;
-    UDFirst: TUpDown;
-    ChkTodos: TCheckBox;
-    Button4: TButton;
-    Button5: TButton;
-    Query_Join: TIBQuery;
-    Button6: TButton;
     Panel2: TPanel;
     Lista_Joins: TListBox;
     Panel3: TPanel;
@@ -68,8 +26,78 @@ type
     BtnPrepara: TSpeedButton;
     MemPlan: TMemo;
     SpeedButton2: TSpeedButton;
-    FDGUIxLoginDialog1: TFDGUIxLoginDialog;
+    Panel1: TPanel;
+    Label6: TLabel;
+    Label1: TLabel;
+    LbCampos: TLabel;
+    Label5: TLabel;
+    LstCampos: TListBox;
+    LstTabelas_Selecionadas: TListBox;
+    BtnAdd: TButton;
+    BtnAddAll: TButton;
+    BtnRem: TButton;
+    BtnRemAll: TButton;
+    CmbTabelas: TComboBox;
+    LstCampos_Filtro: TListBox;
+    Button1: TButton;
+    Button2: TButton;
+    Button3: TButton;
+    PCCondicao_Ordem: TPageControl;
+    TabSheet3: TTabSheet;
+    LstFiltro: TListBox;
+    CmbCondicao: TComboBox;
+    TabSheet7: TTabSheet;
+    LstFiltro_Campos_Agregados: TListBox;
+    CmbCondicao_Agregados: TComboBox;
+    TabSheet4: TTabSheet;
+    CmbOrdem: TComboBox;
+    LstOrdem: TListBox;
+    TabSheet8: TTabSheet;
+    EdtFirst: TEdit;
+    UDFirst: TUpDown;
+    ChkTodos: TCheckBox;
+    GBCampos_Selecionados: TPageControl;
+    TabSheet5: TTabSheet;
+    LstCampos_Selecionados: TListBox;
+    TabSheet6: TTabSheet;
+    LstCampos_Agregados: TListBox;
+    CmbFuncao: TComboBox;
+    Button4: TButton;
+    Button5: TButton;
+    Button6: TButton;
+    IBTransaction: TIBTransaction;
+    Query_: TIBQuery;
+    Query2_: TIBQuery;
+    DS_Query_Relatorio: TDataSource;
+    Query_Relatorio_: TIBQuery;
+    IBSQL: TIBSQL;
+    Query_Join_: TIBQuery;
     Cxo: TFDConnection;
+    pnCONN: TPanel;
+    Panel9: TPanel;
+    pnCONN_NAV: TPanel;
+    DBNavigator1: TDBNavigator;
+    btnConectar: TBitBtn;
+    Panel10: TPanel;
+    DBText3: TDBText;
+    DBRichEdit1: TDBRichEdit;
+    Combo_Connection: TComboBox;
+    FDPhysFBDriverLink1: TFDPhysFBDriverLink;
+    DTS_CNN: TDataSource;
+    CDS_CNN: TClientDataSet;
+    CDS_CNNCNN_Type: TStringField;
+    CDS_CNNCNN_Name: TStringField;
+    CDS_CNNCNN_Server: TStringField;
+    CDS_CNNCNN_Port: TIntegerField;
+    CDS_CNNCNN_Database: TStringField;
+    CDS_CNNCNN_Schema: TStringField;
+    CDS_CNNCNN_UserName: TStringField;
+    CDS_CNNCNN_Password: TStringField;
+    Query: TFDQuery;
+    Query2: TFDQuery;
+    Query_Join: TFDQuery;
+    Query_Relatorio: TFDQuery;
+    FDTransaction: TFDTransaction;
     procedure FormShow(Sender: TObject);
     procedure BtnAddClick(Sender: TObject);
     procedure BtnAddAllClick(Sender: TObject);
@@ -90,21 +118,28 @@ type
     procedure LstTabelas_SelecionadasClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
-    procedure Query_JoinFilterRecord(DataSet: TDataSet;
+    procedure Query_Join_FilterRecord(DataSet: TDataSet;
       var Accept: Boolean);
     procedure Button6Click(Sender: TObject);
     procedure BtnGera_SqlClick(Sender: TObject);
     procedure BtnPreparaClick(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure Combo_ConnectionChange(Sender: TObject);
+    procedure btnConectarClick(Sender: TObject);
   private
     { Private declarations }
     Indice_Filtro : Integer;
+    FAppPathName : String;
+    procedure Conectar(Driver: String; Conn: TFDConnection; Server, Database, User, Pass: String; Port: Integer = 0);
   public
     { Public declarations }
+    procedure SaveConnection;
+    procedure LoadConnection;
   end;
 
 var
-  FrmGera_Sql: TFrmGera_Sql;
+  FrmPrincipal: TFrmPrincipal;
 
 implementation
 
@@ -115,7 +150,7 @@ uses
 {$R *.dfm}
 
 
-procedure TFrmGera_Sql.Gera_Script;
+procedure TFrmPrincipal.Gera_Script;
 Var i, j, k : integer;
     Lst_Temp : TStringList;
     Constraint : String;
@@ -632,7 +667,7 @@ begin
      end;
 end;
 
-function TFrmGera_Sql.Eh_View : Boolean;
+function TFrmPrincipal.Eh_View : Boolean;
 begin
      Result := False;
 
@@ -647,7 +682,7 @@ begin
      end;
 end;
 
-function TFrmGera_Sql.Verifica_View : Boolean;
+function TFrmPrincipal.Verifica_View : Boolean;
 var i : integer;
 begin
      Result := True;
@@ -685,42 +720,27 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.FormShow(Sender: TObject);
+procedure TFrmPrincipal.FormCreate(Sender: TObject);
 begin
-  FDGUIxLoginDialog1.;
+  FAppPathName := ExtractFilePath(ParamStr(0));
 
-     FrmConecta.ShowModal;
-
-     if FrmConecta.ModalResult = MrOk then
-     begin
-          Query.SQL.Text := 'SELECT * FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG = 0';
-          Query.Open;
-
-          CmbTabelas.Clear;
-
-          while not Query.Eof do
-          begin
-               CmbTabelas.Items.Add( Trim( Query.FieldByName( 'RDB$RELATION_NAME' ).AsString ) );
-
-               Query.Next;
-          end;
-
-          Query.Close;
-
-          CmbCondicao.ItemIndex := 0;
-     end;
-
-     PageControl1.ActivePageIndex := 0;
-     PCCondicao_Ordem.ActivePageIndex := 0;
-     GBCampos_Selecionados.ActivePageIndex := 0;
-
-     CmbOrdem.ItemIndex := 0;
-     CmbCondicao.ItemIndex := 0;
-     CmbCondicao_Agregados.ItemIndex := 0;
-     CmbFuncao.ItemIndex := 0;
+  //Abre Configurações de Conexão
+  LoadConnection;
 end;
 
-procedure TFrmGera_Sql.BtnAddClick(Sender: TObject);
+procedure TFrmPrincipal.FormShow(Sender: TObject);
+begin
+  PageControl1.ActivePageIndex := 0;
+  PCCondicao_Ordem.ActivePageIndex := 0;
+  GBCampos_Selecionados.ActivePageIndex := 0;
+
+  CmbOrdem.ItemIndex := 0;
+  CmbCondicao.ItemIndex := 0;
+  CmbCondicao_Agregados.ItemIndex := 0;
+  CmbFuncao.ItemIndex := 0;
+end;
+
+procedure TFrmPrincipal.BtnAddClick(Sender: TObject);
 var Funcao : String;
 begin
      if LstCampos.ItemIndex <> -1 then
@@ -795,7 +815,34 @@ begin
      PCCondicao_OrdemChange( PCCondicao_Ordem );
 end;
 
-procedure TFrmGera_Sql.BtnAddAllClick(Sender: TObject);
+procedure TFrmPrincipal.btnConectarClick(Sender: TObject);
+begin
+  Conectar(CDS_CNN.FieldByName('CNN_TYPE').AsString,
+           Cxo,
+           CDS_CNN.FieldByName('CNN_SERVER').AsString,
+           CDS_CNN.FieldByName('CNN_DATABASE').AsString,
+           CDS_CNN.FieldByName('CNN_USERNAME').AsString,
+           CDS_CNN.FieldByName('CNN_PASSWORD').AsString,
+           CDS_CNN.FieldByName('CNN_PORT').AsInteger);
+
+  if not Cxo.Connected then
+    Exit;
+  if FrmConecta.ModalResult = MrOk then
+  begin
+    Query.SQL.Text := 'SELECT * FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG = 0';
+    Query.Open;
+    CmbTabelas.Clear;
+    while not Query.Eof do
+    begin
+      CmbTabelas.Items.Add( Trim( Query.FieldByName( 'RDB$RELATION_NAME' ).AsString ) );
+      Query.Next;
+    end;
+    Query.Close;
+    CmbCondicao.ItemIndex := 0;
+  end;
+end;
+
+procedure TFrmPrincipal.BtnAddAllClick(Sender: TObject);
 var I : Integer;
 begin
      For i := 0 to LstCampos.Count -1 do
@@ -807,7 +854,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.BtnRemClick(Sender: TObject);
+procedure TFrmPrincipal.BtnRemClick(Sender: TObject);
 begin
      if GBCampos_Selecionados.ActivePageIndex = 0 then
      begin
@@ -839,7 +886,7 @@ begin
      PCCondicao_OrdemChange( PCCondicao_Ordem );
 end;
 
-procedure TFrmGera_Sql.BtnRemAllClick(Sender: TObject);
+procedure TFrmPrincipal.BtnRemAllClick(Sender: TObject);
 begin
      if MessageDlg( 'Confirma a remoção de todas as tabelas?', MtConfirmation, [mbyes, mbno], 0 ) = MrYes then
      begin
@@ -858,7 +905,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.Button1Click(Sender: TObject);
+procedure TFrmPrincipal.Button1Click(Sender: TObject);
 var Condicao : String;
 begin
      if PCCondicao_Ordem.ActivePageIndex in [0,1] then
@@ -897,7 +944,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.Button2Click(Sender: TObject);
+procedure TFrmPrincipal.Button2Click(Sender: TObject);
 begin
      if PCCondicao_Ordem.ActivePageIndex = 0 then
      begin
@@ -915,7 +962,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.Button3Click(Sender: TObject);
+procedure TFrmPrincipal.Button3Click(Sender: TObject);
 begin
      if PCCondicao_Ordem.ActivePageIndex = 0 then
      begin
@@ -926,7 +973,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.PageControl1Change(Sender: TObject);
+procedure TFrmPrincipal.PageControl1Change(Sender: TObject);
 var i : Integer;
     Parametro : String;
 begin
@@ -976,7 +1023,31 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.LstCampos_AgregadosDblClick(Sender: TObject);
+procedure TFrmPrincipal.LoadConnection;
+begin
+  if FileExists(ExtractFilePath(ParamStr(0))+'Connection.xml') then
+  begin
+    CDS_CNN.Close;
+    CDS_CNN.CreateDataSet;
+    CDS_CNN.LoadFromFile(FAppPathName+'Connection.xml');
+    CDS_CNN.Open;
+    CDS_CNN.First;
+
+    Combo_Connection.Clear;
+    while not CDS_CNN.Eof do
+    begin
+      Combo_Connection.Items.Add(CDS_CNN.FieldByName('CNN_Name').AsString);
+      CDS_CNN.Next;
+    end;
+    Combo_Connection.ItemIndex := 0;
+    Combo_ConnectionChange(Self);
+  end else
+  begin
+  CDS_CNN.CreateDataSet;
+  end;
+end;
+
+procedure TFrmPrincipal.LstCampos_AgregadosDblClick(Sender: TObject);
 var Linha : String;
 begin
      if LstCampos_Agregados.ItemIndex <> -1 then
@@ -990,7 +1061,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.PCCondicao_OrdemChange(Sender: TObject);
+procedure TFrmPrincipal.PCCondicao_OrdemChange(Sender: TObject);
 var i : Integer;
 begin
      if PCCondicao_Ordem.ActivePageIndex = 0 then
@@ -1042,7 +1113,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.LstFiltroDblClick(Sender: TObject);
+procedure TFrmPrincipal.LstFiltroDblClick(Sender: TObject);
 var Linha : String;
 begin
      if LstFiltro.ItemIndex <> -1 then
@@ -1056,7 +1127,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.LstFiltro_Campos_AgregadosDblClick(Sender: TObject);
+procedure TFrmPrincipal.LstFiltro_Campos_AgregadosDblClick(Sender: TObject);
 var Linha : String;
 begin
      if LstFiltro_Campos_Agregados.ItemIndex <> -1 then
@@ -1070,7 +1141,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.ChkTodosClick(Sender: TObject);
+procedure TFrmPrincipal.ChkTodosClick(Sender: TObject);
 begin
      if not ChkTodos.Checked then
      begin
@@ -1081,7 +1152,119 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.LstTabelas_SelecionadasClick(Sender: TObject);
+procedure TFrmPrincipal.Combo_ConnectionChange(Sender: TObject);
+begin
+  CDS_CNN.Locate('CNN_NAME',Combo_Connection.Text,[]);
+end;
+
+procedure TFrmPrincipal.Conectar(Driver: String; Conn: TFDConnection; Server, Database, User, Pass: String; Port: Integer);
+const
+  DBOracle = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%s))(CONNECT_DATA=(SERVICE_NAME=XE)))';
+begin
+  Conn.Connected := False;
+  if (Driver = 'MSSQL') then
+  begin
+    Conn.Params.Clear;
+    Conn.DriverName                      := 'MSSQL';
+    Conn.Params.DriverID                 := 'MSSQL';
+    Conn.Params.Values['Server']         := Server;
+    Conn.Params.Values['DataBase']       := Database;
+    if (Length(Trim(User)) = 0)and(Length(Trim(Pass)) = 0) then
+    begin
+      Conn.Params.Values['OSAuthent']    := 'Yes';
+      Conn.Params.Values['User_Name']    := '';//User;
+      Conn.Params.Values['Password']     := '';//Pass;
+    end
+    else
+    begin
+      Conn.Params.Values['OSAuthent']    := 'No';
+      Conn.Params.Values['User_Name']    := User;
+      Conn.Params.Values['Password']     := Pass;
+    end;
+    Conn.Params.Values['MetaDefSchema']  := 'dbo';
+    Conn.Params.Values['MetaDefCatalog'] := Database;
+    Conn.Params.Values['DriverID']       := 'MSSQL';
+  end
+  else
+  if (Driver = 'Firebird') then
+  begin
+     Conn.Params.Clear;
+     Conn.DriverName                     := 'FB';
+     Conn.Params.DriverID                := 'FB';
+     Conn.Params.Values['DriverID']      := 'FB';
+     Conn.Params.Values['Server']        := Server;
+     if Port > 0 then
+        Conn.Params.Values['Port']       := IntToStr(Port);
+     Conn.Params.Values['DataBase']      := Database;
+     Conn.Params.Values['User_Name']     := User;
+     Conn.Params.Values['Password']      := Pass;
+  end
+  else
+  if (Driver = 'Interbase') then
+  begin
+     Conn.Params.Clear;
+     Conn.DriverName                     := 'IB';
+     Conn.Params.DriverID                := 'IB';
+     Conn.Params.Values['DriverID']      := 'IB';
+     Conn.Params.Values['Server']        := Server;
+     if Port > 0 then
+        Conn.Params.Values['Port']       := IntToStr(Port);
+     Conn.Params.Values['DataBase']      := Database;
+     Conn.Params.Values['User_Name']     := User;
+     Conn.Params.Values['Password']      := Pass;
+  end
+  else
+  if ( Driver = 'Oracle') then
+  begin
+     Conn.Params.Clear;
+     Conn.DriverName                     := 'Ora';
+     Conn.Params.DriverID                := 'Ora';
+     Conn.Params.Values['DataBase']      := Format(DBOracle, [Server, IntToStr(Port)]);
+     Conn.Params.Values['User_Name']     := User;
+     Conn.Params.Values['Password']      := Pass;
+  end
+  else
+  if ( Driver = 'MySQL') then
+  begin
+     Conn.Params.Clear;
+     Conn.DriverName                     := 'MySQL';
+     Conn.Params.DriverID                := 'MySQL';
+     Conn.Params.Values['Server']        := Server;
+     if Port > 0 then
+        Conn.Params.Values['Port']       := IntToStr(Port);
+     Conn.Params.Values['DataBase']      := Database;
+     Conn.Params.Values['User_Name']     := User;
+     Conn.Params.Values['Password']      := Pass;
+  end
+  else
+  if ( Driver = 'SQLite') then
+  begin
+     Conn.DriverName                     := 'SQLite';
+     Conn.Params.Clear;
+     Conn.Params.DriverID                := 'SQLite';
+     Conn.Params.Values['HostName']      := '';
+     Conn.Params.Values['DataBase']      := Database;
+     Conn.Params.Values['User_Name']     := '';
+     Conn.Params.Values['Password']      := '';
+  end
+  else
+  if ( Driver = 'PostgreSQL') then
+  begin
+     Conn.DriverName                     := 'PG';
+     Conn.Params.Clear;
+     Conn.Params.DriverID                := 'PG';
+     Conn.Params.Values['Server']        := Server;
+     if Port > 0 then
+        Conn.Params.Values['Port']       := IntToStr(Port);
+     Conn.Params.Values['DataBase']      := Database;
+     Conn.Params.Values['User_Name']     := User;
+     Conn.Params.Values['Password']      := Pass;
+  end;
+  Conn.Connected                         := True;
+  //Metadata.Connection                    := Conn;
+end;
+
+procedure TFrmPrincipal.LstTabelas_SelecionadasClick(Sender: TObject);
 begin
      if LstTabelas_Selecionadas.ItemIndex <> -1 then
      begin
@@ -1109,7 +1292,7 @@ begin
      PCCondicao_OrdemChange( PCCondicao_Ordem );
 end;
 
-procedure TFrmGera_Sql.Button4Click(Sender: TObject);
+procedure TFrmPrincipal.Button4Click(Sender: TObject);
 begin
      if not Verifica_View then
      begin
@@ -1123,7 +1306,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.Button5Click(Sender: TObject);
+procedure TFrmPrincipal.Button5Click(Sender: TObject);
 begin
      LstTabelas_Selecionadas.DeleteSelected;
 
@@ -1135,7 +1318,7 @@ begin
      LstCampos.Clear;
 end;
 
-procedure TFrmGera_Sql.Query_JoinFilterRecord(DataSet: TDataSet;
+procedure TFrmPrincipal.Query_Join_FilterRecord(DataSet: TDataSet;
   var Accept: Boolean);
 begin
      if ( LstTabelas_Selecionadas.ItemIndex <> -1 ) and ( Indice_Filtro <> -1 ) then
@@ -1144,7 +1327,7 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.Button6Click(Sender: TObject);
+procedure TFrmPrincipal.Button6Click(Sender: TObject);
 var Temp : String;
 begin
      if ( LstTabelas_Selecionadas.ItemIndex > 0 ) then
@@ -1159,12 +1342,12 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.BtnGera_SqlClick(Sender: TObject);
+procedure TFrmPrincipal.BtnGera_SqlClick(Sender: TObject);
 begin
      Gera_Script;
 end;
 
-procedure TFrmGera_Sql.BtnPreparaClick(Sender: TObject);
+procedure TFrmPrincipal.BtnPreparaClick(Sender: TObject);
 begin
      if Trim( MemScript.Text ) <> '' then
      begin
@@ -1191,7 +1374,12 @@ begin
      end;
 end;
 
-procedure TFrmGera_Sql.SpeedButton2Click(Sender: TObject);
+procedure TFrmPrincipal.SaveConnection;
+begin
+  CDS_CNN.SaveToFile(ExtractFilePath(ParamStr(0))+'Connection.xml', dfXML);
+end;
+
+procedure TFrmPrincipal.SpeedButton2Click(Sender: TObject);
 begin
   Clipboard.AsText := MemScript.Text;
 end;

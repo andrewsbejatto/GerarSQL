@@ -2,14 +2,13 @@ program GerarSQL;
 
 uses
   Forms,
-  UnitGera_Sql in 'UnitGera_Sql.pas' {FrmGera_Sql},
-  UnitConecta in 'UnitConecta.pas' {FrmConecta};
+  Frm_Principal in 'Frm_Principal.pas' {FrmPrincipal},
+  Frm_Connection in 'Frm_Connection.pas' {FrmConnection};
 
 {$R *.res}
 
 begin
   Application.Initialize;
-  Application.CreateForm(TFrmGera_Sql, FrmGera_Sql);
-  Application.CreateForm(TFrmConecta, FrmConecta);
+  Application.CreateForm(TFrmPrincipal, FrmPrincipal);
   Application.Run;
 end.
