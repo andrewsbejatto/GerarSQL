@@ -1,9 +1,9 @@
 object FrmPrincipal: TFrmPrincipal
   Left = 247
   Top = 130
-  Caption = 'Gerar Consulta'
+  Caption = 'Gerar Consulta v0.0.0.1'
   ClientHeight = 802
-  ClientWidth = 910
+  ClientWidth = 893
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -24,7 +24,7 @@ object FrmPrincipal: TFrmPrincipal
     AlignWithMargins = True
     Left = 3
     Top = 506
-    Width = 904
+    Width = 887
     Height = 296
     Margins.Top = 5
     Margins.Bottom = 0
@@ -32,16 +32,12 @@ object FrmPrincipal: TFrmPrincipal
     Align = alClient
     TabOrder = 0
     OnChange = PageControl1Change
-    ExplicitLeft = 0
-    ExplicitTop = 496
-    ExplicitWidth = 893
-    ExplicitHeight = 306
     object TabSheet1: TTabSheet
       Caption = 'SQL'
       object MemScript: TMemo
         Left = 0
         Top = 49
-        Width = 896
+        Width = 879
         Height = 219
         Align = alClient
         Font.Charset = ANSI_CHARSET
@@ -52,22 +48,19 @@ object FrmPrincipal: TFrmPrincipal
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
-        ExplicitWidth = 885
-        ExplicitHeight = 229
       end
       object Panel2: TPanel
         Left = 0
         Top = 0
-        Width = 896
+        Width = 879
         Height = 49
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 1
-        ExplicitWidth = 885
         object Lista_Joins: TListBox
           Left = 185
           Top = 0
-          Width = 711
+          Width = 694
           Height = 49
           Align = alClient
           Font.Charset = ANSI_CHARSET
@@ -79,8 +72,6 @@ object FrmPrincipal: TFrmPrincipal
           ParentFont = False
           TabOrder = 0
           Visible = False
-          ExplicitLeft = 145
-          ExplicitWidth = 740
         end
         object Panel3: TPanel
           Left = 0
@@ -118,7 +109,7 @@ object FrmPrincipal: TFrmPrincipal
         object MemPlan: TMemo
           Left = 185
           Top = 0
-          Width = 711
+          Width = 694
           Height = 49
           Align = alClient
           Font.Charset = ANSI_CHARSET
@@ -128,8 +119,6 @@ object FrmPrincipal: TFrmPrincipal
           Font.Style = []
           ParentFont = False
           TabOrder = 2
-          ExplicitLeft = 192
-          ExplicitWidth = 704
         end
       end
     end
@@ -155,7 +144,7 @@ object FrmPrincipal: TFrmPrincipal
     AlignWithMargins = True
     Left = 3
     Top = 155
-    Width = 904
+    Width = 887
     Height = 346
     Margins.Top = 5
     Margins.Bottom = 0
@@ -164,11 +153,8 @@ object FrmPrincipal: TFrmPrincipal
     BevelOuter = bvNone
     Caption = 'Panel1'
     TabOrder = 1
-    ExplicitLeft = 0
-    ExplicitTop = 151
-    ExplicitWidth = 910
     DesignSize = (
-      900
+      883
       342)
     object Label6: TLabel
       Left = 8
@@ -239,7 +225,7 @@ object FrmPrincipal: TFrmPrincipal
     object LstTabelas_Selecionadas: TListBox
       Left = 375
       Top = 24
-      Width = 475
+      Width = 458
       Height = 49
       Anchors = [akLeft, akTop, akRight]
       Columns = 2
@@ -411,7 +397,7 @@ object FrmPrincipal: TFrmPrincipal
     object PCCondicao_Ordem: TPageControl
       Left = 375
       Top = 200
-      Width = 514
+      Width = 497
       Height = 113
       ActivePage = TabSheet3
       Anchors = [akLeft, akTop, akRight]
@@ -423,7 +409,7 @@ object FrmPrincipal: TFrmPrincipal
           AlignWithMargins = True
           Left = 0
           Top = 24
-          Width = 506
+          Width = 489
           Height = 61
           Hint = 'D'#234' um clique duplo para alterar'
           Margins.Left = 0
@@ -441,14 +427,11 @@ object FrmPrincipal: TFrmPrincipal
           ShowHint = True
           TabOrder = 0
           OnDblClick = LstFiltroDblClick
-          ExplicitLeft = 8
-          ExplicitWidth = 501
-          ExplicitHeight = 57
         end
         object CmbCondicao: TComboBox
           Left = 0
           Top = 0
-          Width = 506
+          Width = 489
           Height = 21
           Align = alTop
           Style = csDropDownList
@@ -462,8 +445,6 @@ object FrmPrincipal: TFrmPrincipal
             'Contendo'
             'N'#227'o Come'#231'ando com'
             'N'#227'o Contendo')
-          ExplicitLeft = 8
-          ExplicitWidth = 201
         end
       end
       object TabSheet7: TTabSheet
@@ -473,7 +454,7 @@ object FrmPrincipal: TFrmPrincipal
           AlignWithMargins = True
           Left = 0
           Top = 24
-          Width = 506
+          Width = 489
           Height = 61
           Hint = 'D'#234' um clique duplo para alterar'
           Margins.Left = 0
@@ -491,15 +472,11 @@ object FrmPrincipal: TFrmPrincipal
           ShowHint = True
           TabOrder = 0
           OnDblClick = LstFiltro_Campos_AgregadosDblClick
-          ExplicitLeft = 13
-          ExplicitTop = 25
-          ExplicitWidth = 497
-          ExplicitHeight = 57
         end
         object CmbCondicao_Agregados: TComboBox
           Left = 0
           Top = 0
-          Width = 506
+          Width = 489
           Height = 21
           Align = alTop
           Style = csDropDownList
@@ -509,8 +486,6 @@ object FrmPrincipal: TFrmPrincipal
             'Diferente'
             'Maior ou Igual'
             'Menor ou Igual')
-          ExplicitLeft = 8
-          ExplicitWidth = 201
         end
       end
       object TabSheet4: TTabSheet
@@ -519,7 +494,7 @@ object FrmPrincipal: TFrmPrincipal
         object CmbOrdem: TComboBox
           Left = 0
           Top = 0
-          Width = 506
+          Width = 489
           Height = 21
           Align = alTop
           Style = csDropDownList
@@ -527,15 +502,12 @@ object FrmPrincipal: TFrmPrincipal
           Items.Strings = (
             'Crescente'
             'Decrescente')
-          ExplicitLeft = 3
-          ExplicitTop = -3
-          ExplicitWidth = 201
         end
         object LstOrdem: TListBox
           AlignWithMargins = True
           Left = 0
           Top = 24
-          Width = 506
+          Width = 489
           Height = 61
           Margins.Left = 0
           Margins.Right = 0
@@ -549,9 +521,6 @@ object FrmPrincipal: TFrmPrincipal
           ItemHeight = 14
           ParentFont = False
           TabOrder = 1
-          ExplicitLeft = 8
-          ExplicitWidth = 501
-          ExplicitHeight = 57
         end
       end
       object TabSheet8: TTabSheet
@@ -591,7 +560,7 @@ object FrmPrincipal: TFrmPrincipal
     object GBCampos_Selecionados: TPageControl
       Left = 375
       Top = 80
-      Width = 518
+      Width = 501
       Height = 113
       ActivePage = TabSheet5
       Anchors = [akLeft, akTop, akRight]
@@ -601,7 +570,7 @@ object FrmPrincipal: TFrmPrincipal
         object LstCampos_Selecionados: TListBox
           Left = 0
           Top = 0
-          Width = 510
+          Width = 493
           Height = 85
           Hint = 'D'#234' um clique duplo para alterar'
           Align = alClient
@@ -615,10 +584,6 @@ object FrmPrincipal: TFrmPrincipal
           ParentShowHint = False
           ShowHint = False
           TabOrder = 0
-          ExplicitLeft = 8
-          ExplicitTop = 4
-          ExplicitWidth = 501
-          ExplicitHeight = 77
         end
       end
       object TabSheet6: TTabSheet
@@ -628,7 +593,7 @@ object FrmPrincipal: TFrmPrincipal
           AlignWithMargins = True
           Left = 0
           Top = 24
-          Width = 510
+          Width = 493
           Height = 61
           Hint = 'D'#234' um clique duplo para alterar'
           Margins.Left = 0
@@ -646,14 +611,11 @@ object FrmPrincipal: TFrmPrincipal
           ShowHint = True
           TabOrder = 0
           OnDblClick = LstCampos_AgregadosDblClick
-          ExplicitLeft = 8
-          ExplicitWidth = 501
-          ExplicitHeight = 57
         end
         object CmbFuncao: TComboBox
           Left = 0
           Top = 0
-          Width = 510
+          Width = 493
           Height = 21
           Align = alTop
           Style = csDropDownList
@@ -665,8 +627,6 @@ object FrmPrincipal: TFrmPrincipal
             'M'#233'dia'
             'M'#237'nimo'
             'Soma')
-          ExplicitLeft = 8
-          ExplicitWidth = 201
         end
       end
     end
@@ -707,7 +667,7 @@ object FrmPrincipal: TFrmPrincipal
       OnClick = Button5Click
     end
     object Button6: TButton
-      Left = 856
+      Left = 839
       Top = 24
       Width = 33
       Height = 50
@@ -724,13 +684,12 @@ object FrmPrincipal: TFrmPrincipal
       ShowHint = True
       TabOrder = 15
       OnClick = Button6Click
-      ExplicitLeft = 866
     end
   end
   object pnCONN: TPanel
     Left = 0
     Top = 0
-    Width = 910
+    Width = 893
     Height = 150
     Align = alTop
     BevelOuter = bvNone
@@ -738,11 +697,10 @@ object FrmPrincipal: TFrmPrincipal
     Color = clWhite
     ParentBackground = False
     TabOrder = 2
-    ExplicitWidth = 893
     object Panel9: TPanel
       Left = 5
       Top = 5
-      Width = 900
+      Width = 883
       Height = 19
       Align = alTop
       BevelOuter = bvNone
@@ -750,17 +708,15 @@ object FrmPrincipal: TFrmPrincipal
       Color = clSilver
       ParentBackground = False
       TabOrder = 0
-      ExplicitWidth = 883
     end
     object pnCONN_NAV: TPanel
       Left = 5
       Top = 118
-      Width = 900
+      Width = 883
       Height = 27
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 3
-      ExplicitWidth = 883
       object DBNavigator1: TDBNavigator
         Left = 0
         Top = 0
@@ -772,7 +728,7 @@ object FrmPrincipal: TFrmPrincipal
         TabOrder = 0
       end
       object btnConectar: TBitBtn
-        Left = 772
+        Left = 755
         Top = 0
         Width = 128
         Height = 27
@@ -823,14 +779,13 @@ object FrmPrincipal: TFrmPrincipal
           00000000000000000000050A0300000000000000000000000000}
         TabOrder = 1
         OnClick = btnConectarClick
-        ExplicitLeft = 755
       end
     end
     object Panel10: TPanel
       AlignWithMargins = True
       Left = 8
       Top = 58
-      Width = 894
+      Width = 877
       Height = 57
       Align = alClient
       BevelOuter = bvNone
@@ -839,12 +794,11 @@ object FrmPrincipal: TFrmPrincipal
       Enabled = False
       ParentBackground = False
       TabOrder = 2
-      ExplicitWidth = 877
       object DBText3: TDBText
         AlignWithMargins = True
         Left = 6
         Top = 6
-        Width = 882
+        Width = 865
         Height = 18
         Align = alTop
         DataField = 'CNN_Server'
@@ -857,7 +811,7 @@ object FrmPrincipal: TFrmPrincipal
         AlignWithMargins = True
         Left = 6
         Top = 30
-        Width = 882
+        Width = 865
         Height = 21
         Align = alClient
         BorderStyle = bsNone
@@ -869,13 +823,12 @@ object FrmPrincipal: TFrmPrincipal
         Font.Name = 'MS Sans Serif'
         Font.Style = []
         TabOrder = 0
-        ExplicitWidth = 865
       end
     end
     object Combo_Connection: TComboBox
       Left = 5
       Top = 24
-      Width = 900
+      Width = 883
       Height = 31
       Align = alTop
       Style = csDropDownList
@@ -887,7 +840,6 @@ object FrmPrincipal: TFrmPrincipal
       ParentFont = False
       TabOrder = 1
       OnChange = Combo_ConnectionChange
-      ExplicitWidth = 883
     end
   end
   object IBTransaction_: TIBTransaction
