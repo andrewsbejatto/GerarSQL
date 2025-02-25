@@ -96,13 +96,7 @@ object FrmConnection: TFrmConnection
       DataField = 'CNN_Type'
       DataSource = FrmPrincipal.DTS_CNN
       Items.Strings = (
-        'Firebird'
-        'Interbase'
-        'MSSQL'
-        'MySQL'
-        'Oracle'
-        'PostgreSQL'
-        'SQLite')
+        'Firebird')
       TabOrder = 0
       OnChange = DBComboBox1Change
     end

@@ -15,7 +15,7 @@ object FrmPrincipal: TFrmPrincipal
   OnCreate = FormCreate
   OnShow = FormShow
   TextHeight = 13
-  object PageControl1: TPageControl
+  object PageControlSQL: TPageControl
     AlignWithMargins = True
     Left = 3
     Top = 485
@@ -23,12 +23,10 @@ object FrmPrincipal: TFrmPrincipal
     Height = 317
     Margins.Top = 5
     Margins.Bottom = 0
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     Align = alClient
     TabOrder = 0
-    OnChange = PageControl1Change
-    ExplicitTop = 506
-    ExplicitHeight = 296
+    OnChange = PageControlSQLChange
     object TabSheet1: TTabSheet
       Caption = 'SQL'
       object MemScript: TMemo
@@ -45,7 +43,6 @@ object FrmPrincipal: TFrmPrincipal
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
-        ExplicitHeight = 219
       end
       object Panel2: TPanel
         Left = 0
@@ -139,7 +136,7 @@ object FrmPrincipal: TFrmPrincipal
       end
     end
   end
-  object Panel1: TPanel
+  object pnlTables: TPanel
     AlignWithMargins = True
     Left = 3
     Top = 155
@@ -150,7 +147,7 @@ object FrmPrincipal: TFrmPrincipal
     Align = alTop
     BevelKind = bkFlat
     BevelOuter = bvNone
-    Caption = 'Panel1'
+    Caption = 'pnlTables'
     TabOrder = 1
     DesignSize = (
       883
@@ -841,63 +838,14 @@ object FrmPrincipal: TFrmPrincipal
       OnChange = Combo_ConnectionChange
     end
   end
-  object IBTransaction_: TIBTransaction
-    Params.Strings = (
-      'read_committed'
-      'rec_version'
-      'nowait')
-    Left = 88
-    Top = 120
-  end
-  object Query_: TIBQuery
-    Transaction = IBTransaction_
-    BufferChunks = 1000
-    CachedUpdates = False
-    ParamCheck = False
-    SQL.Strings = (
-      'SELECT * FROM VENDAS, ITENS_VENDAS')
-    PrecommittedReads = False
-    Left = 160
-    Top = 120
-  end
-  object Query2_: TIBQuery
-    Transaction = IBTransaction_
-    BufferChunks = 1000
-    CachedUpdates = False
-    ParamCheck = True
-    PrecommittedReads = False
-    Left = 224
-    Top = 120
-  end
   object DS_Query_Relatorio: TDataSource
     DataSet = Query_Relatorio
-    Left = 200
-    Top = 232
-  end
-  object Query_Relatorio_: TIBQuery
-    Transaction = IBTransaction_
-    BufferChunks = 1000
-    CachedUpdates = False
-    ParamCheck = True
-    PrecommittedReads = False
-    Left = 88
-    Top = 240
+    Left = 792
+    Top = 272
   end
   object IBSQL_: TIBSQL
-    Transaction = IBTransaction_
     Left = 280
     Top = 96
-  end
-  object Query_Join_: TIBQuery
-    Transaction = IBTransaction_
-    BufferChunks = 1000
-    CachedUpdates = False
-    ParamCheck = True
-    Filtered = True
-    PrecommittedReads = False
-    OnFilterRecord = Query_Join_FilterRecord
-    Left = 96
-    Top = 64
   end
   object Cxo: TFDConnection
     Params.Strings = (
@@ -906,6 +854,7 @@ object FrmPrincipal: TFrmPrincipal
       'Password=masterkey')
     LoginPrompt = False
     Transaction = FDTransaction
+    AfterConnect = CxoAfterConnect
     Left = 392
     Top = 272
   end
@@ -973,6 +922,7 @@ object FrmPrincipal: TFrmPrincipal
     Top = 270
   end
   object Query_Join: TFDQuery
+    OnFilterRecord = Query_JoinFilterRecord
     Connection = Cxo
     Transaction = FDTransaction
     Left = 592
@@ -987,8 +937,8 @@ object FrmPrincipal: TFrmPrincipal
   object FDTransaction: TFDTransaction
     Options.ReadOnly = True
     Connection = Cxo
-    Left = 764
-    Top = 278
+    Left = 700
+    Top = 182
   end
   object ApplicationEvents1: TApplicationEvents
     OnModalBegin = ApplicationEvents1ModalBegin

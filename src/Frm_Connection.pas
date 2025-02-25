@@ -75,11 +75,23 @@ end;
 procedure TFrmConnection.DBComboBox1Change(Sender: TObject);
 begin
   Label7.Visible := DBComboBox1.ItemIndex
-    in [DBComboBox1.Items.IndexOf('Firebird'),
-    DBComboBox1.Items.IndexOf('MySQL'), DBComboBox1.Items.IndexOf('Interbase'),
-    DBComboBox1.Items.IndexOf('Oracle'),
-    DBComboBox1.Items.IndexOf('PostgreSQL')];
+    in [DBComboBox1.Items.IndexOf('Firebird')];
   DBEdit6.Visible := Label7.Visible;
 end;
+
+{
+    DBComboBox1.Items.IndexOf('MySQL'), DBComboBox1.Items.IndexOf('Interbase'),
+    DBComboBox1.Items.IndexOf('Oracle'),
+    DBComboBox1.Items.IndexOf('PostgreSQL')
+}
+
+{
+Interbase
+MSSQL
+MySQL
+Oracle
+PostgreSQL
+SQLite
+}
 
 end.

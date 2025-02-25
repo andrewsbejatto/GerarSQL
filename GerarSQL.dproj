@@ -140,6 +140,7 @@
             <Form>FormFundo</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="src\Log.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

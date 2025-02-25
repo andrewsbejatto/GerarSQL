@@ -20,7 +20,7 @@ uses
 
 type
   TFrmPrincipal = class(TForm)
-    PageControl1: TPageControl;
+    PageControlSQL: TPageControl;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
     MemScript: TMemo;
@@ -32,7 +32,7 @@ type
     BtnPrepara: TSpeedButton;
     MemPlan: TMemo;
     SpeedButton2: TSpeedButton;
-    Panel1: TPanel;
+    pnlTables: TPanel;
     Label6: TLabel;
     Label1: TLabel;
     LbCampos: TLabel;
@@ -71,13 +71,8 @@ type
     Button4: TButton;
     Button5: TButton;
     Button6: TButton;
-    IBTransaction_: TIBTransaction;
-    Query_: TIBQuery;
-    Query2_: TIBQuery;
     DS_Query_Relatorio: TDataSource;
-    Query_Relatorio_: TIBQuery;
     IBSQL_: TIBSQL;
-    Query_Join_: TIBQuery;
     Cxo: TFDConnection;
     pnCONN: TPanel;
     Panel9: TPanel;
@@ -116,7 +111,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
-    procedure PageControl1Change(Sender: TObject);
+    procedure PageControlSQLChange(Sender: TObject);
     procedure LstCampos_AgregadosDblClick(Sender: TObject);
     procedure PCCondicao_OrdemChange(Sender: TObject);
     procedure LstFiltroDblClick(Sender: TObject);
@@ -125,7 +120,6 @@ type
     procedure LstTabelas_SelecionadasClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
-    procedure Query_Join_FilterRecord(DataSet: TDataSet; var Accept: Boolean);
     procedure Button6Click(Sender: TObject);
     procedure BtnGera_SqlClick(Sender: TObject);
     procedure BtnPreparaClick(Sender: TObject);
@@ -141,6 +135,8 @@ type
     procedure ApplicationEvents1ModalBegin(Sender: TObject);
     procedure ApplicationEvents1ModalEnd(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure CxoAfterConnect(Sender: TObject);
+    procedure Query_JoinFilterRecord(DataSet: TDataSet; var Accept: Boolean);
   private
     { Private declarations }
     Indice_Filtro: Integer;
@@ -160,8 +156,10 @@ var
 implementation
 
 uses
+  CodeSiteLogging,
   Vcl.Clipbrd,
-  Frm_Connection;
+  Frm_Connection,
+  Log;
 
 {$R *.dfm}
 
@@ -246,8 +244,26 @@ begin
       Script_Temp := '';
       Inner_Ou_Left := '';
 
-      For i := 0 to LstTabelas_Selecionadas.Items.Count - 1 do
+      // Selecionando as constraints (a tabela é filtrada no evento OnFilterRecord)
+      var LSqlConstraints := '''
+        SELECT
+          RRC.RDB$CONSTRAINT_NAME NOME_CONSTRAINT, RRC.RDB$INDEX_NAME, RRC.RDB$RELATION_NAME, RIS.RDB$FIELD_NAME CAMPO, RIS.RDB$FIELD_POSITION,
+          (SELECT RI2.RDB$RELATION_NAME FROM RDB$INDICES RI2 WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY ) TABELA_RELACIONADA,
+          (SELECT RIS2.RDB$FIELD_NAME FROM RDB$INDEX_SEGMENTS RIS2 INNER JOIN RDB$INDICES RI2 ON RIS2.RDB$INDEX_NAME = RI2.RDB$INDEX_NAME
+           WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY AND RIS2.RDB$FIELD_POSITION = RIS.RDB$FIELD_POSITION ) CAMPO_RELACIONADO
+        FROM RDB$RELATION_CONSTRAINTS RRC
+          INNER JOIN RDB$INDEX_SEGMENTS RIS ON RIS.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME
+          INNER JOIN RDB$INDICES RI ON RI.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME
+        WHERE RRC.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
+        ORDER BY 6, RRC.RDB$CONSTRAINT_NAME, RIS.RDB$FIELD_POSITION
+        ''';
+      Query_Join.SQL.Text := LSqlConstraints;
+      CodeSite.Send('Query_Join', Query_Join.SQL.Text);
+      Query_Join.Open;
+
+      For i := 0 to Pred(LstTabelas_Selecionadas.Items.Count) do
       begin
+        Query_Join.First;
         LstTabelas_Selecionadas.ItemIndex := i;
 
         // Armazenando o índice para o filtro no OnFilterRecord
@@ -255,67 +271,48 @@ begin
 
         Nome_Tabela_Relacionada := '';
 
-        // Selecionando as constraints (a tabela é filtrada no evento OnFilterRecord)
-        Query_Join.SQL.Text :=
-          ' SELECT RRC.RDB$CONSTRAINT_NAME NOME_CONSTRAINT, RRC.RDB$INDEX_NAME, RRC.RDB$RELATION_NAME, RIS.RDB$FIELD_NAME CAMPO, RIS.RDB$FIELD_POSITION, '
-          + ' ( SELECT RI2.RDB$RELATION_NAME ' + ' FROM RDB$INDICES RI2 ' +
-          ' WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY ) TABELA_RELACIONADA, '
-          +
-
-          ' ( SELECT RIS2.RDB$FIELD_NAME ' +
-          ' FROM RDB$INDEX_SEGMENTS RIS2 INNER JOIN RDB$INDICES RI2 ON RIS2.RDB$INDEX_NAME = RI2.RDB$INDEX_NAME '
-          + ' WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY AND ' +
-          '       RIS2.RDB$FIELD_POSITION = RIS.RDB$FIELD_POSITION ) CAMPO_RELACIONADO '
-          +
-
-          ' FROM RDB$RELATION_CONSTRAINTS RRC ' +
-          '      INNER JOIN RDB$INDEX_SEGMENTS RIS ON RIS.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME '
-          + '            INNER JOIN RDB$INDICES RI ON RI.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME '
-          + ' WHERE RRC.RDB$CONSTRAINT_TYPE = ''FOREIGN KEY'' ORDER BY 6, RRC.RDB$CONSTRAINT_NAME, RIS.RDB$FIELD_POSITION';
-        Query_Join.Open;
-
         // Armazenando o nome da constraint para verificar a mudança de join
         Constraint := Query_Join.FieldByName('NOME_CONSTRAINT').AsString;
 
         while not Query_Join.Eof do
         begin
           // Verificando se a tabela Relacionada está no rol das tabelas Selecionadas, se estiver então...
-          if LstTabelas_Selecionadas.Items.IndexOf
-            (Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString)) <> -1
-          then
+          if LstTabelas_Selecionadas.Items.IndexOf(Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString)) <> -1 then
           begin
             // Verificando se um dos campos admite nulo
+            var LSqlCampoNulo := '''
+              SELECT
+                *
+              FROM RDB$RELATION_FIELDS, RDB$FIELDS
+              WHERE
+                RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND
+                RDB$RELATION_FIELDS.RDB$RELATION_NAME = %s AND
+                RDB$RELATION_FIELDS.RDB$FIELD_NAME = %s
+              ''';
+
             // Verificando o 1º Campo
-            Query2.SQL.Text := ' select * from rdb$relation_fields, rdb$fields '
-              + ' where RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND '
-              + '       rdb$relation_fields.rdb$relation_name = ''' +
-              Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString) +
-              ''' AND rdb$relation_fields.RDB$FIELD_NAME = ''' +
-              Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) + '''';
+            Query2.SQL.Text := Format(LSqlCampoNulo,
+              [QuotedStr(Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString)),
+               QuotedStr(Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString))]);
+            CodeSite.Send('Query2', Query2.SQL.Text);
             Query2.Open;
 
-            if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') and
-              (Query2.FieldByName('RDB$NULL_FLAG1').AsString = '') then
+            if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') then
             begin
               // armazenando o tipo de ligação
               Inner_Ou_Left := 'LEFT JOIN';
-            end
-            else
+            end else
             begin
+
               // Verificando o 2º Campo
-              Query2.SQL.Text :=
-                ' select * from rdb$relation_fields, rdb$fields ' +
-                ' where RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND '
-                + '       rdb$relation_fields.rdb$relation_name = ''' +
-                Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString) +
-                ''' AND rdb$relation_fields.RDB$FIELD_NAME = ''' +
-                Trim(Query_Join.FieldByName('CAMPO').AsString) + '''';
+              Query2.SQL.Text := Format(LSqlCampoNulo,
+                [QuotedStr(Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString)),
+                 QuotedStr(Trim(Query_Join.FieldByName('CAMPO').AsString))]);
+              CodeSite.Send('Query2', Query2.SQL.Text);
               Query2.Open;
+
               if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') then
-              // ( Query2.FieldByName( 'RDB$NULL_FLAG1' ).AsString = '' ) then
-              begin
-                Inner_Ou_Left := 'LEFT JOIN';
-              end
+                Inner_Ou_Left := 'LEFT JOIN'
               else
               begin
                 if (Inner_Ou_Left = '') then
@@ -324,29 +321,35 @@ begin
                 end;
               end;
             end;
-
             Query2.Close;
+
+            // Verifica se a Tabela Relacionada está listagem de tabelas selecionadas
+            if LstTabelas_Selecionadas.Items.IndexOf(Query_Join.FieldByName('TABELA_RELACIONADA').AsString) < 0 then
+            begin
+              Query_Join.Next;
+              Continue;
+            end;
 
             // Se for o primeiro campo de uma chave composta então armazene na variável...
             if (Query_Join.FieldByName('RDB$FIELD_POSITION').AsInteger = 0) then
             begin
               // é adicionado o nome "TABELA" para podermos adicionar mais tarde o nome da tabela
               // O caracter "|" é para marcar a posição da relação INNER ou LEFT
-              Script_Temp := ' |TABELA ON ' + LstTabelas_Selecionadas.Items[i] +
-                '.' + Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString)
-                + ' = ' + Trim(Query_Join.FieldByName('RDB$RELATION_NAME')
-                .AsString) + '.' + Trim(Query_Join.FieldByName('CAMPO')
-                .AsString);
+              Script_Temp :=
+                ' |TABELA ON ' + LstTabelas_Selecionadas.Items[i] + '.' +
+                Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) + ' = ' +
+                Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString) + '.' +
+                Trim(Query_Join.FieldByName('CAMPO').AsString);
             end
             else
             // Se não for o primeiro campo de uma chave composta então adicione o resto do join...
             begin
-              Script_Temp := Script_Temp + ' AND ' +
+              Script_Temp :=
+                Script_Temp + ' AND ' +
                 LstTabelas_Selecionadas.Items[i] + '.' +
-                Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) +
-                ' = ' + Trim(Query_Join.FieldByName('RDB$RELATION_NAME')
-                .AsString) + '.' + Trim(Query_Join.FieldByName('CAMPO')
-                .AsString);
+                Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) + ' = ' +
+                Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString) + '.' +
+                Trim(Query_Join.FieldByName('CAMPO').AsString);
             end;
 
             // Esta variável será adicionada na frente do JOIN indicando as tabelas que participam da
@@ -358,8 +361,7 @@ begin
           Query_Join.Next;
 
           // Se esta constraint já foi processada, então vou adicionar numa lista
-          if (Constraint <> Query_Join.FieldByName('NOME_CONSTRAINT').AsString)
-            or Query_Join.Eof then
+          if (Constraint <> Query_Join.FieldByName('NOME_CONSTRAINT').AsString) or Query_Join.Eof then
           begin
             if Script_Temp <> '' then
             begin
@@ -383,9 +385,8 @@ begin
             Constraint := Query_Join.FieldByName('NOME_CONSTRAINT').AsString;
           end;
         end;
-
-        Query_Join.Close;
       end;
+      Query_Join.Close;
 
       Paragrafo := '';
 
@@ -418,7 +419,7 @@ begin
                 LstTabelas_Selecionadas.Items[j + 1] + ' ' +
                 Copy(Lista_Joins.Items[i], Pos('TABELA', Lista_Joins.Items[i]) +
                 7, Length(Lista_Joins.Items[i]));
-              Linha_Temp := 'FROM ' + LstTabelas_Selecionadas.Items[j] +
+              Linha_Temp := 'FROM ' + LstTabelas_Selecionadas.Items[j] + sLineBreak +
                 Copy(Lista_Joins.Items[i], Pos(':', Lista_Joins.Items[i]) + 1,
                 Length(Lista_Joins.Items[i]));
 
@@ -744,6 +745,8 @@ end;
 procedure TFrmPrincipal.FormCreate(Sender: TObject);
 begin
   FAppPathName := ExtractFilePath(ParamStr(0));
+  pnlTables.Enabled := False;
+  PageControlSQL.Enabled := False;
   Fundo := TFormFundo.CreateNew(Self, True);
 
   // Abre Configurações de Conexão
@@ -752,7 +755,7 @@ end;
 
 procedure TFrmPrincipal.FormShow(Sender: TObject);
 begin
-  PageControl1.ActivePageIndex := 0;
+  PageControlSQL.ActivePageIndex := 0;
   PCCondicao_Ordem.ActivePageIndex := 0;
   GBCampos_Selecionados.ActivePageIndex := 0;
 
@@ -1022,12 +1025,12 @@ begin
   end;
 end;
 
-procedure TFrmPrincipal.PageControl1Change(Sender: TObject);
+procedure TFrmPrincipal.PageControlSQLChange(Sender: TObject);
 var
   i: Integer;
   Parametro: String;
 begin
-  if PageControl1.ActivePageIndex = 1 then
+  if PageControlSQL.ActivePageIndex = 1 then
   begin
     BtnGera_SqlClick(BtnGera_Sql);
     BtnPreparaClick(BtnPrepara);
@@ -1360,6 +1363,12 @@ begin
   // Metadata.Connection                    := Conn;
 end;
 
+procedure TFrmPrincipal.CxoAfterConnect(Sender: TObject);
+begin
+  pnlTables.Enabled := True;
+  PageControlSQL.Enabled := True;
+end;
+
 procedure TFrmPrincipal.LstTabelas_SelecionadasClick(Sender: TObject);
 begin
   if LstTabelas_Selecionadas.ItemIndex <> -1 then
@@ -1420,8 +1429,7 @@ begin
   LstCampos.Clear;
 end;
 
-procedure TFrmPrincipal.Query_Join_FilterRecord(DataSet: TDataSet;
-  var Accept: Boolean);
+procedure TFrmPrincipal.Query_JoinFilterRecord(DataSet: TDataSet; var Accept: Boolean);
 begin
   if (LstTabelas_Selecionadas.ItemIndex <> -1) and (Indice_Filtro <> -1) then
   begin
