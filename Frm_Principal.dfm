@@ -28,7 +28,7 @@ object FrmPrincipal: TFrmPrincipal
     Height = 296
     Margins.Top = 5
     Margins.Bottom = 0
-    ActivePage = TabSheet1
+    ActivePage = TabSheet2
     Align = alClient
     TabOrder = 0
     OnChange = PageControl1Change
@@ -128,9 +128,10 @@ object FrmPrincipal: TFrmPrincipal
       object GrdConsulta: TDBGrid
         Left = 0
         Top = 0
-        Width = 896
+        Width = 879
         Height = 268
         Align = alClient
+        DataSource = DS_Query_Relatorio
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
