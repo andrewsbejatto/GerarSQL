@@ -12,7 +12,7 @@ object FrmConnection: TFrmConnection
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  Position = poDefault
+  Position = poMainFormCenter
   OnDeactivate = FormDeactivate
   TextHeight = 13
   object GroupBox1: TGroupBox

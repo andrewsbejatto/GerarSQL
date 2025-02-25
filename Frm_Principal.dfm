@@ -2,13 +2,13 @@ object FrmPrincipal: TFrmPrincipal
   Left = 247
   Top = 130
   Caption = 'Gerar Consulta'
-  ClientHeight = 635
+  ClientHeight = 802
   ClientWidth = 893
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
-  Font.Name = 'MS Sans Serif'
+  Font.Name = 'Verdana'
   Font.Style = []
   Position = poScreenCenter
   OnCreate = FormCreate
@@ -24,27 +24,30 @@ object FrmPrincipal: TFrmPrincipal
     Left = 0
     Top = 496
     Width = 893
-    Height = 139
+    Height = 306
     ActivePage = TabSheet1
     Align = alClient
     TabOrder = 0
     OnChange = PageControl1Change
+    ExplicitHeight = 139
     object TabSheet1: TTabSheet
       Caption = 'SQL'
       object MemScript: TMemo
         Left = 0
         Top = 49
         Width = 885
-        Height = 62
+        Height = 229
         Align = alClient
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
         Font.Height = -11
-        Font.Name = 'Courier New'
+        Font.Name = 'Verdana'
         Font.Style = []
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
+        ExplicitLeft = 1
+        ExplicitHeight = 62
       end
       object Panel2: TPanel
         Left = 0
@@ -112,7 +115,7 @@ object FrmPrincipal: TFrmPrincipal
           Font.Charset = ANSI_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
-          Font.Name = 'Courier New'
+          Font.Name = 'Verdana'
           Font.Style = []
           ParentFont = False
           TabOrder = 2
@@ -126,13 +129,13 @@ object FrmPrincipal: TFrmPrincipal
         Left = 0
         Top = 0
         Width = 885
-        Height = 111
+        Height = 278
         Align = alClient
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
         TitleFont.Height = -11
-        TitleFont.Name = 'MS Sans Serif'
+        TitleFont.Name = 'Verdana'
         TitleFont.Style = []
       end
     end
@@ -208,9 +211,9 @@ object FrmPrincipal: TFrmPrincipal
       Font.Charset = ANSI_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
-      Font.Name = 'Courier New'
+      Font.Name = 'Verdana'
       Font.Style = []
-      ItemHeight = 14
+      ItemHeight = 13
       ParentFont = False
       TabOrder = 0
     end
@@ -224,9 +227,9 @@ object FrmPrincipal: TFrmPrincipal
       Font.Charset = ANSI_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
-      Font.Name = 'Courier New'
+      Font.Name = 'Verdana'
       Font.Style = []
-      ItemHeight = 14
+      ItemHeight = 13
       ParentFont = False
       TabOrder = 1
       OnClick = LstTabelas_SelecionadasClick
@@ -307,12 +310,12 @@ object FrmPrincipal: TFrmPrincipal
       Left = 16
       Top = 24
       Width = 313
-      Height = 22
+      Height = 21
       Style = csDropDownList
       Font.Charset = ANSI_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
-      Font.Name = 'Courier New'
+      Font.Name = 'Verdana'
       Font.Style = []
       ParentFont = False
       Sorted = True
@@ -326,9 +329,9 @@ object FrmPrincipal: TFrmPrincipal
       Font.Charset = ANSI_CHARSET
       Font.Color = clWindowText
       Font.Height = -11
-      Font.Name = 'Courier New'
+      Font.Name = 'Verdana'
       Font.Style = []
-      ItemHeight = 14
+      ItemHeight = 13
       ParentFont = False
       TabOrder = 7
     end
@@ -410,9 +413,9 @@ object FrmPrincipal: TFrmPrincipal
           Font.Charset = ANSI_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
-          Font.Name = 'Courier New'
+          Font.Name = 'Verdana'
           Font.Style = []
-          ItemHeight = 14
+          ItemHeight = 13
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
@@ -566,9 +569,9 @@ object FrmPrincipal: TFrmPrincipal
           Font.Charset = ANSI_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
-          Font.Name = 'Courier New'
+          Font.Name = 'Verdana'
           Font.Style = []
-          ItemHeight = 14
+          ItemHeight = 13
           ParentFont = False
           ParentShowHint = False
           ShowHint = False
@@ -591,9 +594,9 @@ object FrmPrincipal: TFrmPrincipal
           Font.Charset = ANSI_CHARSET
           Font.Color = clWindowText
           Font.Height = -11
-          Font.Name = 'Courier New'
+          Font.Name = 'Verdana'
           Font.Style = []
-          ItemHeight = 14
+          ItemHeight = 13
           ParentFont = False
           ParentShowHint = False
           ShowHint = True
@@ -829,7 +832,7 @@ object FrmPrincipal: TFrmPrincipal
       OnChange = Combo_ConnectionChange
     end
   end
-  object IBTransaction: TIBTransaction
+  object IBTransaction_: TIBTransaction
     Params.Strings = (
       'read_committed'
       'rec_version'
@@ -838,7 +841,7 @@ object FrmPrincipal: TFrmPrincipal
     Top = 120
   end
   object Query_: TIBQuery
-    Transaction = IBTransaction
+    Transaction = IBTransaction_
     BufferChunks = 1000
     CachedUpdates = False
     ParamCheck = False
@@ -849,7 +852,7 @@ object FrmPrincipal: TFrmPrincipal
     Top = 120
   end
   object Query2_: TIBQuery
-    Transaction = IBTransaction
+    Transaction = IBTransaction_
     BufferChunks = 1000
     CachedUpdates = False
     ParamCheck = True
@@ -863,7 +866,7 @@ object FrmPrincipal: TFrmPrincipal
     Top = 232
   end
   object Query_Relatorio_: TIBQuery
-    Transaction = IBTransaction
+    Transaction = IBTransaction_
     BufferChunks = 1000
     CachedUpdates = False
     ParamCheck = True
@@ -871,13 +874,13 @@ object FrmPrincipal: TFrmPrincipal
     Left = 88
     Top = 240
   end
-  object IBSQL: TIBSQL
-    Transaction = IBTransaction
+  object IBSQL_: TIBSQL
+    Transaction = IBTransaction_
     Left = 280
     Top = 96
   end
   object Query_Join_: TIBQuery
-    Transaction = IBTransaction
+    Transaction = IBTransaction_
     BufferChunks = 1000
     CachedUpdates = False
     ParamCheck = True
@@ -892,6 +895,7 @@ object FrmPrincipal: TFrmPrincipal
       'DriverID=FB'
       'User_Name=sysdba'
       'Password=masterkey')
+    LoginPrompt = False
     Transaction = FDTransaction
     Left = 392
     Top = 272
@@ -909,6 +913,11 @@ object FrmPrincipal: TFrmPrincipal
   object CDS_CNN: TClientDataSet
     Aggregates = <>
     Params = <>
+    AfterInsert = CDS_CNNAfterInsert
+    BeforePost = CDS_CNNBeforePost
+    AfterPost = CDS_CNNAfterPost
+    AfterDelete = CDS_CNNAfterDelete
+    OnNewRecord = CDS_CNNNewRecord
     Left = 552
     Top = 16
     object CDS_CNNCNN_Type: TStringField
@@ -944,21 +953,25 @@ object FrmPrincipal: TFrmPrincipal
   end
   object Query: TFDQuery
     Connection = Cxo
+    Transaction = FDTransaction
     Left = 456
     Top = 272
   end
   object Query2: TFDQuery
     Connection = Cxo
+    Transaction = FDTransaction
     Left = 524
     Top = 270
   end
   object Query_Join: TFDQuery
     Connection = Cxo
+    Transaction = FDTransaction
     Left = 592
     Top = 272
   end
   object Query_Relatorio: TFDQuery
     Connection = Cxo
+    Transaction = FDTransaction
     Left = 676
     Top = 278
   end
