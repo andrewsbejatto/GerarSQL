@@ -1,4 +1,4 @@
-unit Frm_Principal;
+Ôªøunit Frm_Principal;
 
 interface
 
@@ -6,10 +6,14 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Buttons, ExtCtrls, DB, IBCustomDataSet, IBQuery,
   IBDatabase, ComCtrls, Grids, DBGrids, IBSQL, FireDAC.UI.Intf,
-  FireDAC.VCLUI.Login, FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error,
-  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
-  FireDAC.VCLUI.Wait, FireDAC.Comp.Client, FireDAC.Comp.UI, FireDAC.Phys.FB, FireDAC.Phys.FBDef,
-  Vcl.DBCtrls, FireDAC.Phys.IBBase, Datasnap.DBClient, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.VCLUI.Login, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys,
+  FireDAC.VCLUI.Wait, FireDAC.Comp.Client, FireDAC.Comp.UI, FireDAC.Phys.FB,
+  FireDAC.Phys.FBDef,
+  Vcl.DBCtrls, FireDAC.Phys.IBBase, Datasnap.DBClient, FireDAC.Stan.Param,
+  FireDAC.DatS,
   FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet;
 
 type
@@ -104,8 +108,8 @@ type
     procedure BtnAddAllClick(Sender: TObject);
     procedure BtnRemClick(Sender: TObject);
     procedure BtnRemAllClick(Sender: TObject);
-    function Verifica_View : Boolean;
-    function eh_view       : Boolean;
+    function Verifica_View: Boolean;
+    function eh_view: Boolean;
     procedure Gera_Script;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -119,8 +123,7 @@ type
     procedure LstTabelas_SelecionadasClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
-    procedure Query_Join_FilterRecord(DataSet: TDataSet;
-      var Accept: Boolean);
+    procedure Query_Join_FilterRecord(DataSet: TDataSet; var Accept: Boolean);
     procedure Button6Click(Sender: TObject);
     procedure BtnGera_SqlClick(Sender: TObject);
     procedure BtnPreparaClick(Sender: TObject);
@@ -135,9 +138,10 @@ type
     procedure CDS_CNNNewRecord(DataSet: TDataSet);
   private
     { Private declarations }
-    Indice_Filtro : Integer;
-    FAppPathName : String;
-    procedure Conectar(Driver: String; Conn: TFDConnection; Server, Database, User, Pass: String; Port: Integer = 0);
+    Indice_Filtro: Integer;
+    FAppPathName: String;
+    procedure Conectar(Driver: String; Conn: TFDConnection;
+      Server, Database, User, Pass: String; Port: Integer = 0);
   public
     { Public declarations }
     procedure SaveConnection;
@@ -151,196 +155,226 @@ implementation
 
 uses
   Vcl.Clipbrd,
-  UnitConecta, Frm_Connection;
+  Frm_Connection;
 
 {$R *.dfm}
 
-
 procedure TFrmPrincipal.Gera_Script;
 var
-  i, j, k : integer;
-  Lst_Temp : TStringList;
-  Constraint : String;
-  Script_Temp, Nome_Tabela_Relacionada : String;
-  Paragrafo : String;
-  Achou, From_Used : Boolean;
-  Tabela_Selecionada : String;
-  Inner_Ou_Left : String;
-  Where : String;
-  Operacao : String;
-  Prefixo, Sulfixo : String;
-  First : String;
-  Tabelas_Selecionadas : String;
-  Linha_Temp : String;
+  i, j, k: Integer;
+  Lst_Temp: TStringList;
+  Constraint: String;
+  Script_Temp, Nome_Tabela_Relacionada: String;
+  Paragrafo: String;
+  Achou, From_Used: Boolean;
+  Tabela_Selecionada: String;
+  Inner_Ou_Left: String;
+  Where: String;
+  Operacao: String;
+  Prefixo, Sulfixo: String;
+  First: String;
+  Tabelas_Selecionadas: String;
+  Linha_Temp: String;
 
-  //Acha a posiÁ„o do campo para o order by
-  function Acha_Indice( Campo : String ) : String;
+  // Acha a posi√ß√£o do campo para o order by
+  function Acha_Indice(Campo: String): String;
   begin
-    if LstCampos_Selecionados.Items.IndexOf( Campo ) <> -1 then
-      Result := IntToStr( LstCampos_Selecionados.Items.IndexOf( Campo ) + 1 )
+    if LstCampos_Selecionados.Items.IndexOf(Campo) <> -1 then
+      Result := IntToStr(LstCampos_Selecionados.Items.IndexOf(Campo) + 1)
     else
-      Result := IntToStr( LstCampos_Selecionados.Count + LstCampos_Agregados.Items.IndexOf( Campo ) + 1 );
+      Result := IntToStr(LstCampos_Selecionados.Count +
+        LstCampos_Agregados.Items.IndexOf(Campo) + 1);
   end;
+
 begin
   MemScript.Clear;
 
-  if ( LstTabelas_Selecionadas.Count > 0 ) then
+  if (LstTabelas_Selecionadas.Count > 0) then
   begin
-    Lst_Temp := TSTringList.Create;
+    Lst_Temp := TStringList.Create;
     Lista_Joins.Clear;
 
-    //Adicionando os n Primeiros
+    // Adicionando os n Primeiros
     if not ChkTodos.Checked then
       First := 'FIRST ' + EdtFirst.Text
     else
       First := '';
 
-    MemScript.Lines.Add( 'SELECT ' + First );
+    MemScript.Lines.Add('SELECT ' + First);
 
-    //Selecionando os campos a serem exibidos
-    if LstCampos_Selecionados.Items.Count + LstCampos_Agregados.Items.Count > 0 then
+    // Selecionando os campos a serem exibidos
+    if LstCampos_Selecionados.Items.Count + LstCampos_Agregados.Items.Count > 0
+    then
     begin
-      For i := 0 to LstCampos_Selecionados.Items.Count -1 do
+      For i := 0 to LstCampos_Selecionados.Items.Count - 1 do
       begin
-        if i = LstCampos_Selecionados.Items.Count -1 then
+        if i = LstCampos_Selecionados.Items.Count - 1 then
         begin
           if LstCampos_Agregados.Items.Count > 0 then
-            MemScript.Lines.Add( '      ' + LstCampos_Selecionados.Items[i] + ', ')
+            MemScript.Lines.Add('      ' + LstCampos_Selecionados.Items
+              [i] + ', ')
           else
-            MemScript.Lines.Add( '      ' + LstCampos_Selecionados.Items[i] );
-        end else
-          MemScript.Lines.Add( '      ' + LstCampos_Selecionados.Items[i] + ', ');
-      end;
-
-      For i := 0 to LstCampos_Agregados.Items.Count -1 do
-      begin
-        if i = LstCampos_Agregados.Items.Count -1 then
-          MemScript.Lines.Add( '      ' + LstCampos_Agregados.Items[i] )
+            MemScript.Lines.Add('      ' + LstCampos_Selecionados.Items[i]);
+        end
         else
-          MemScript.Lines.Add( '      ' + LstCampos_Agregados.Items[i] + ', ');
+          MemScript.Lines.Add('      ' + LstCampos_Selecionados.Items
+            [i] + ', ');
       end;
-    end else
-      MemScript.Lines.Add( '      *' );
 
-    //verificar se ser· selecionada apenas uma tabela ou ser· necess·rio fazer ligaÁıes
+      For i := 0 to LstCampos_Agregados.Items.Count - 1 do
+      begin
+        if i = LstCampos_Agregados.Items.Count - 1 then
+          MemScript.Lines.Add('      ' + LstCampos_Agregados.Items[i])
+        else
+          MemScript.Lines.Add('      ' + LstCampos_Agregados.Items[i] + ', ');
+      end;
+    end
+    else
+      MemScript.Lines.Add('      *');
+
+    // verificar se ser√° selecionada apenas uma tabela ou ser√° necess√°rio fazer liga√ß√µes
     if LstTabelas_Selecionadas.Items.Count = 1 then
-      MemScript.Lines.Add( 'FROM ' + LstTabelas_Selecionadas.Items[0] )
+      MemScript.Lines.Add('FROM ' + LstTabelas_Selecionadas.Items[0])
     else
     begin
       Script_Temp := '';
       Inner_Ou_Left := '';
 
-      For i := 0 to LstTabelas_Selecionadas.Items.Count -1 do
+      For i := 0 to LstTabelas_Selecionadas.Items.Count - 1 do
       begin
         LstTabelas_Selecionadas.ItemIndex := i;
 
-        //Armazenando o Ìndice para o filtro no OnFilterRecord
+        // Armazenando o √≠ndice para o filtro no OnFilterRecord
         Indice_Filtro := i;
 
         Nome_Tabela_Relacionada := '';
 
-        //Selecionando as constraints (a tabela È filtrada no evento OnFilterRecord)
-        Query_Join.SQL.Text := ' SELECT RRC.RDB$CONSTRAINT_NAME NOME_CONSTRAINT, RRC.RDB$INDEX_NAME, RRC.RDB$RELATION_NAME, RIS.RDB$FIELD_NAME CAMPO, RIS.RDB$FIELD_POSITION, ' +
-                               ' ( SELECT RI2.RDB$RELATION_NAME ' +
-                               ' FROM RDB$INDICES RI2 ' +
-                               ' WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY ) TABELA_RELACIONADA, ' +
+        // Selecionando as constraints (a tabela √© filtrada no evento OnFilterRecord)
+        Query_Join.SQL.Text :=
+          ' SELECT RRC.RDB$CONSTRAINT_NAME NOME_CONSTRAINT, RRC.RDB$INDEX_NAME, RRC.RDB$RELATION_NAME, RIS.RDB$FIELD_NAME CAMPO, RIS.RDB$FIELD_POSITION, '
+          + ' ( SELECT RI2.RDB$RELATION_NAME ' + ' FROM RDB$INDICES RI2 ' +
+          ' WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY ) TABELA_RELACIONADA, '
+          +
 
-                               ' ( SELECT RIS2.RDB$FIELD_NAME ' +
-                               ' FROM RDB$INDEX_SEGMENTS RIS2 INNER JOIN RDB$INDICES RI2 ON RIS2.RDB$INDEX_NAME = RI2.RDB$INDEX_NAME ' +
-                               ' WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY AND ' +
-                               '       RIS2.RDB$FIELD_POSITION = RIS.RDB$FIELD_POSITION ) CAMPO_RELACIONADO ' +
+          ' ( SELECT RIS2.RDB$FIELD_NAME ' +
+          ' FROM RDB$INDEX_SEGMENTS RIS2 INNER JOIN RDB$INDICES RI2 ON RIS2.RDB$INDEX_NAME = RI2.RDB$INDEX_NAME '
+          + ' WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY AND ' +
+          '       RIS2.RDB$FIELD_POSITION = RIS.RDB$FIELD_POSITION ) CAMPO_RELACIONADO '
+          +
 
-                               ' FROM RDB$RELATION_CONSTRAINTS RRC ' +
-                               '      INNER JOIN RDB$INDEX_SEGMENTS RIS ON RIS.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME ' +
-                               '            INNER JOIN RDB$INDICES RI ON RI.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME ' +
-                               ' WHERE RRC.RDB$CONSTRAINT_TYPE = ''FOREIGN KEY'' ORDER BY 6, RRC.RDB$CONSTRAINT_NAME, RIS.RDB$FIELD_POSITION';
+          ' FROM RDB$RELATION_CONSTRAINTS RRC ' +
+          '      INNER JOIN RDB$INDEX_SEGMENTS RIS ON RIS.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME '
+          + '            INNER JOIN RDB$INDICES RI ON RI.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME '
+          + ' WHERE RRC.RDB$CONSTRAINT_TYPE = ''FOREIGN KEY'' ORDER BY 6, RRC.RDB$CONSTRAINT_NAME, RIS.RDB$FIELD_POSITION';
         Query_Join.Open;
 
-        //Armazenando o nome da constraint para verificar a mudanÁa de join
-        Constraint := Query_Join.FieldByName( 'NOME_CONSTRAINT' ).AsString;
+        // Armazenando o nome da constraint para verificar a mudan√ßa de join
+        Constraint := Query_Join.FieldByName('NOME_CONSTRAINT').AsString;
 
         while not Query_Join.Eof do
         begin
-          //Verificando se a tabela Relacionada est· no rol das tabelas Selecionadas, se estiver ent„o...
-          if LstTabelas_Selecionadas.Items.IndexOf( Trim( Query_Join.FieldByName( 'RDB$RELATION_NAME' ).AsString ) ) <> -1 then
+          // Verificando se a tabela Relacionada est√° no rol das tabelas Selecionadas, se estiver ent√£o...
+          if LstTabelas_Selecionadas.Items.IndexOf
+            (Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString)) <> -1
+          then
           begin
-            //Verificando se um dos campos admite nulo
-            //Verificando o 1∫ Campo
-            Query2.SQL.Text := ' select * from rdb$relation_fields, rdb$fields ' +
-                               ' where RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND ' +
-                               '       rdb$relation_fields.rdb$relation_name = ''' + Trim( Query_Join.FieldByName( 'TABELA_RELACIONADA' ).AsString ) + ''' AND rdb$relation_fields.RDB$FIELD_NAME = ''' + Trim( Query_Join.FieldByName( 'CAMPO_RELACIONADO' ).AsString ) + '''';
+            // Verificando se um dos campos admite nulo
+            // Verificando o 1¬∫ Campo
+            Query2.SQL.Text := ' select * from rdb$relation_fields, rdb$fields '
+              + ' where RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND '
+              + '       rdb$relation_fields.rdb$relation_name = ''' +
+              Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString) +
+              ''' AND rdb$relation_fields.RDB$FIELD_NAME = ''' +
+              Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) + '''';
             Query2.Open;
 
-            if ( Query2.FieldByName( 'RDB$NULL_FLAG' ).AsString = '' ) and
-               ( Query2.FieldByName( 'RDB$NULL_FLAG1' ).AsString = '' ) then
+            if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') and
+              (Query2.FieldByName('RDB$NULL_FLAG1').AsString = '') then
             begin
-              //armazenando o tipo de ligaÁ„o
+              // armazenando o tipo de liga√ß√£o
               Inner_Ou_Left := 'LEFT JOIN';
             end
             else
             begin
-              //Verificando o 2∫ Campo
-              Query2.SQL.Text := ' select * from rdb$relation_fields, rdb$fields ' +
-                              ' where RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND ' +
-                              '       rdb$relation_fields.rdb$relation_name = ''' + Trim( Query_Join.FieldByName( 'RDB$RELATION_NAME' ).AsString ) + ''' AND rdb$relation_fields.RDB$FIELD_NAME = ''' + Trim( Query_Join.FieldByName( 'CAMPO' ).AsString ) + '''';
+              // Verificando o 2¬∫ Campo
+              Query2.SQL.Text :=
+                ' select * from rdb$relation_fields, rdb$fields ' +
+                ' where RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND '
+                + '       rdb$relation_fields.rdb$relation_name = ''' +
+                Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString) +
+                ''' AND rdb$relation_fields.RDB$FIELD_NAME = ''' +
+                Trim(Query_Join.FieldByName('CAMPO').AsString) + '''';
               Query2.Open;
-              if ( Query2.FieldByName( 'RDB$NULL_FLAG' ).AsString = '' ) then
-              //( Query2.FieldByName( 'RDB$NULL_FLAG1' ).AsString = '' ) then
+              if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') then
+              // ( Query2.FieldByName( 'RDB$NULL_FLAG1' ).AsString = '' ) then
               begin
                 Inner_Ou_Left := 'LEFT JOIN';
               end
               else
               begin
-                if ( Inner_Ou_Left = '' ) then
+                if (Inner_Ou_Left = '') then
                 begin
-                     Inner_Ou_Left := 'INNER JOIN';
+                  Inner_Ou_Left := 'INNER JOIN';
                 end;
               end;
             end;
 
             Query2.Close;
 
-            //Se for o primeiro campo de uma chave composta ent„o armazene na vari·vel...
-            if ( Query_Join.FieldByName( 'RDB$FIELD_POSITION' ).AsInteger = 0 ) then
+            // Se for o primeiro campo de uma chave composta ent√£o armazene na vari√°vel...
+            if (Query_Join.FieldByName('RDB$FIELD_POSITION').AsInteger = 0) then
             begin
-              //È adicionado o nome "TABELA" para podermos adicionar mais tarde o nome da tabela
-              //O caracter "|" È para marcar a posiÁ„o da relaÁ„o INNER ou LEFT
-              Script_Temp := ' |TABELA ON ' + LstTabelas_Selecionadas.Items[i] + '.' + Trim( Query_Join.FieldByName( 'CAMPO_RELACIONADO' ).AsString  ) + ' = ' + Trim( Query_Join.FieldByName( 'RDB$RELATION_NAME' ).AsString ) + '.' + Trim( Query_Join.FieldByName( 'CAMPO' ).AsString );
+              // √© adicionado o nome "TABELA" para podermos adicionar mais tarde o nome da tabela
+              // O caracter "|" √© para marcar a posi√ß√£o da rela√ß√£o INNER ou LEFT
+              Script_Temp := ' |TABELA ON ' + LstTabelas_Selecionadas.Items[i] +
+                '.' + Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString)
+                + ' = ' + Trim(Query_Join.FieldByName('RDB$RELATION_NAME')
+                .AsString) + '.' + Trim(Query_Join.FieldByName('CAMPO')
+                .AsString);
             end
             else
-            //Se n„o for o primeiro campo de uma chave composta ent„o adicione o resto do join...
+            // Se n√£o for o primeiro campo de uma chave composta ent√£o adicione o resto do join...
             begin
-              Script_Temp := Script_Temp + ' AND ' + LstTabelas_Selecionadas.Items[i] + '.' + Trim( Query_Join.FieldByName( 'CAMPO_RELACIONADO' ).AsString  ) + ' = ' + Trim( Query_Join.FieldByName( 'RDB$RELATION_NAME' ).AsString ) + '.' + Trim( Query_Join.FieldByName( 'CAMPO' ).AsString );
+              Script_Temp := Script_Temp + ' AND ' +
+                LstTabelas_Selecionadas.Items[i] + '.' +
+                Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) +
+                ' = ' + Trim(Query_Join.FieldByName('RDB$RELATION_NAME')
+                .AsString) + '.' + Trim(Query_Join.FieldByName('CAMPO')
+                .AsString);
             end;
 
-            //Esta vari·vel ser· adicionada na frente do JOIN indicando as tabelas que participam da
-            //ligaÁ„o
-            Tabelas_Selecionadas := LstTabelas_Selecionadas.Items[i] + '/' + Trim( Query_Join.FieldByName( 'RDB$RELATION_NAME' ).AsString );
+            // Esta vari√°vel ser√° adicionada na frente do JOIN indicando as tabelas que participam da
+            // liga√ß√£o
+            Tabelas_Selecionadas := LstTabelas_Selecionadas.Items[i] + '/' +
+              Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString);
           end;
 
           Query_Join.Next;
 
-          //Se esta constraint j· foi processada, ent„o vou adicionar numa lista
-          if ( Constraint <> Query_Join.FieldByName( 'NOME_CONSTRAINT' ).AsString ) or Query_Join.eof then
+          // Se esta constraint j√° foi processada, ent√£o vou adicionar numa lista
+          if (Constraint <> Query_Join.FieldByName('NOME_CONSTRAINT').AsString)
+            or Query_Join.Eof then
           begin
             if Script_Temp <> '' then
             begin
-              //Substituindo | por INNER JOIN ou LEFT JOIN
-              while Pos( '|', Script_Temp ) > 0 do
+              // Substituindo | por INNER JOIN ou LEFT JOIN
+              while Pos('|', Script_Temp) > 0 do
               begin
-                Script_Temp := Copy( Script_Temp, 1, Pos( '|', Script_Temp ) -1 ) + Inner_Ou_Left + Copy( Script_Temp, Pos('|', Script_Temp) + 1, Length( Script_Temp ) );
+                Script_Temp := Copy(Script_Temp, 1, Pos('|', Script_Temp) - 1) +
+                  Inner_Ou_Left + Copy(Script_Temp, Pos('|', Script_Temp) + 1,
+                  Length(Script_Temp));
               end;
 
-              //Adicionando a ligaÁ„o na lista. Primeiro coloco os caracteres de controle das tabelas e depois o JOIN propriamente dito
-              Lista_Joins.Items.Add( Tabelas_Selecionadas + ':' + Script_Temp );
+              // Adicionando a liga√ß√£o na lista. Primeiro coloco os caracteres de controle das tabelas e depois o JOIN propriamente dito
+              Lista_Joins.Items.Add(Tabelas_Selecionadas + ':' + Script_Temp);
 
               Script_Temp := '';
 
               Inner_Ou_Left := '';
             end;
 
-            //Atualizando no nome da constraint
-            Constraint := Query_Join.FieldByName( 'NOME_CONSTRAINT' ).AsString;
+            // Atualizando no nome da constraint
+            Constraint := Query_Join.FieldByName('NOME_CONSTRAINT').AsString;
           end;
         end;
 
@@ -351,84 +385,113 @@ begin
 
       From_Used := False;
 
-      //Criando o join
-      For j := 0 to LstTabelas_Selecionadas.Count -2 do
+      // Criando o join
+      For j := 0 to LstTabelas_Selecionadas.Count - 2 do
       begin
-        //Inicializando vari·vel de controle
+        // Inicializando vari√°vel de controle
         Achou := False;
 
-        For i := 0 to Lista_Joins.Count -1 do
+        For i := 0 to Lista_Joins.Count - 1 do
         begin
-          //Inicialmente a relaÁ„o È feita entre tabelas sequenciais. A 1∫ com a 2∫, a 2∫ com a 3∫ ...
-          //Subentende-se que o usu·rio adicionou as tabelas de forma que a tabela dependente foi
-          //selecionada apÛs a tabela principal
-          if ( Copy( Lista_Joins.Items[i], 1, Pos( ':', Lista_Joins.Items[i] ) -1 ) = LstTabelas_Selecionadas.Items[j] + '/' + LstTabelas_Selecionadas.Items[j + 1] ) or
-          ( Copy( Lista_Joins.Items[i], 1, Pos( ':', Lista_Joins.Items[i] ) -1 ) = LstTabelas_Selecionadas.Items[j + 1] + '/' + LstTabelas_Selecionadas.Items[j] ) then
+          // Inicialmente a rela√ß√£o √© feita entre tabelas sequenciais. A 1¬∫ com a 2¬∫, a 2¬∫ com a 3¬∫ ...
+          // Subentende-se que o usu√°rio adicionou as tabelas de forma que a tabela dependente foi
+          // selecionada ap√≥s a tabela principal
+          if (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i]) - 1)
+            = LstTabelas_Selecionadas.Items[j] + '/' +
+            LstTabelas_Selecionadas.Items[j + 1]) or
+            (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i]) - 1)
+            = LstTabelas_Selecionadas.Items[j + 1] + '/' +
+            LstTabelas_Selecionadas.Items[j]) then
           begin
-            //O primeiro Join sempre vai ter o FROM desde que n„o haja duas constraints apontando para a mesma tabela
-            if ( J = 0 ) and not From_Used then
+            // O primeiro Join sempre vai ter o FROM desde que n√£o haja duas constraints apontando para a mesma tabela
+            if (j = 0) and not From_Used then
             begin
-                 //Formatando o join, tirando os caracteres de controle
-                 Lista_Joins.Items[i] := Copy( Lista_Joins.Items[i], 1, Pos( 'TABELA', Lista_Joins.Items[i] ) -1 ) + ' ' + LstTabelas_Selecionadas.Items[j+1] + ' ' + Copy( Lista_Joins.Items[i], Pos( 'TABELA', Lista_Joins.Items[i] ) + 7, Length( Lista_Joins.Items[i] ) );
-                 Linha_Temp := 'FROM ' + LstTabelas_Selecionadas.Items[j] + Copy( Lista_Joins.Items[i], Pos( ':', Lista_Joins.Items[i] ) + 1, Length( Lista_Joins.Items[i] ) );
+              // Formatando o join, tirando os caracteres de controle
+              Lista_Joins.Items[i] := Copy(Lista_Joins.Items[i], 1,
+                Pos('TABELA', Lista_Joins.Items[i]) - 1) + ' ' +
+                LstTabelas_Selecionadas.Items[j + 1] + ' ' +
+                Copy(Lista_Joins.Items[i], Pos('TABELA', Lista_Joins.Items[i]) +
+                7, Length(Lista_Joins.Items[i]));
+              Linha_Temp := 'FROM ' + LstTabelas_Selecionadas.Items[j] +
+                Copy(Lista_Joins.Items[i], Pos(':', Lista_Joins.Items[i]) + 1,
+                Length(Lista_Joins.Items[i]));
 
-                 From_Used := True;
-            end else
+              From_Used := True;
+            end
+            else
             begin
-                 //Formatando o join, tirando os caracteres de controle
-                 Lista_Joins.Items[i] := Copy( Lista_Joins.Items[i], 1, Pos( 'TABELA', Lista_Joins.Items[i] ) -1 ) + ' ' + LstTabelas_Selecionadas.Items[j+1] + ' ' + Copy( Lista_Joins.Items[i], Pos( 'TABELA', Lista_Joins.Items[i] ) + 7, Length( Lista_Joins.Items[i] ) );
-                 Linha_Temp := Copy( Lista_Joins.Items[i], Pos( ':', Lista_Joins.Items[i] ) + 2, Length( Lista_Joins.Items[i] ) );
+              // Formatando o join, tirando os caracteres de controle
+              Lista_Joins.Items[i] := Copy(Lista_Joins.Items[i], 1,
+                Pos('TABELA', Lista_Joins.Items[i]) - 1) + ' ' +
+                LstTabelas_Selecionadas.Items[j + 1] + ' ' +
+                Copy(Lista_Joins.Items[i], Pos('TABELA', Lista_Joins.Items[i]) +
+                7, Length(Lista_Joins.Items[i]));
+              Linha_Temp := Copy(Lista_Joins.Items[i],
+                Pos(':', Lista_Joins.Items[i]) + 2,
+                Length(Lista_Joins.Items[i]));
             end;
 
-            //Adicionando o nome das tabelas que j· participaram, "dando oportunidade"
-            //para as outras tabelas serem mencionadas nos prÛximos joins
-            Lst_Temp.Add( LstTabelas_Selecionadas.Items[j] );
-            Lst_Temp.Add( LstTabelas_Selecionadas.Items[j+1] );
+            // Adicionando o nome das tabelas que j√° participaram, "dando oportunidade"
+            // para as outras tabelas serem mencionadas nos pr√≥ximos joins
+            Lst_Temp.Add(LstTabelas_Selecionadas.Items[j]);
+            Lst_Temp.Add(LstTabelas_Selecionadas.Items[j + 1]);
 
-            //Adicionando JOIN ao script com par·grafo
-            MemScript.Lines.Add( Paragrafo + Linha_Temp );
+            // Adicionando JOIN ao script com par√°grafo
+            MemScript.Lines.Add(Paragrafo + Linha_Temp);
 
-            //Aumentando o par·grafo
+            // Aumentando o par√°grafo
             Paragrafo := Paragrafo + '      ';
 
-            //Existe uma relaÁ„o entre as tabelas sequencialmente
+            // Existe uma rela√ß√£o entre as tabelas sequencialmente
             Achou := True;
           end;
         end;
 
-        //N„o foi encontrada relaÁ„o entre tabelas paralelas, ent„o vamos varrer a lista de tabelas
-        //AtÈ encontrar a tabela que est· relacionada
+        // N√£o foi encontrada rela√ß√£o entre tabelas paralelas, ent√£o vamos varrer a lista de tabelas
+        // At√© encontrar a tabela que est√° relacionada
         if not Achou then
         begin
-          For k := 0 to LstTabelas_Selecionadas.Count -1 do
+          For k := 0 to LstTabelas_Selecionadas.Count - 1 do
           begin
-            //N„o pode ser a mesma tabela usada anteriormente
+            // N√£o pode ser a mesma tabela usada anteriormente
             if k <> j + 1 then
             begin
-              For i := 0 to Lista_Joins.Count -1 do
+              For i := 0 to Lista_Joins.Count - 1 do
               begin
-                //Verifica se existe a relaÁ„o
-                if ( Copy( Lista_Joins.Items[i], 1, Pos( ':', Lista_Joins.Items[i] ) -1 ) = LstTabelas_Selecionadas.Items[j + 1] + '/' + LstTabelas_Selecionadas.Items[k] ) or
-                   ( Copy( Lista_Joins.Items[i], 1, Pos( ':', Lista_Joins.Items[i] ) -1 ) = LstTabelas_Selecionadas.Items[k] + '/' + LstTabelas_Selecionadas.Items[j + 1] ) then
+                // Verifica se existe a rela√ß√£o
+                if (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i])
+                  - 1) = LstTabelas_Selecionadas.Items[j + 1] + '/' +
+                  LstTabelas_Selecionadas.Items[k]) or
+                  (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i])
+                  - 1) = LstTabelas_Selecionadas.Items[k] + '/' +
+                  LstTabelas_Selecionadas.Items[j + 1]) then
                 begin
-                  //Verifica se a tabela j· foi adicionada em alguma relaÁ„o
-                  if ( Lst_Temp.IndexOf( LstTabelas_Selecionadas.Items[j + 1] ) <> -1 ) or
-                  ( Lst_Temp.IndexOf( LstTabelas_Selecionadas.Items[k] ) <> -1 ) then
+                  // Verifica se a tabela j√° foi adicionada em alguma rela√ß√£o
+                  if (Lst_Temp.IndexOf(LstTabelas_Selecionadas.Items[j + 1]) <>
+                    -1) or (Lst_Temp.IndexOf(LstTabelas_Selecionadas.Items[k])
+                    <> -1) then
                   begin
-                    //Pegando o nome da tabela apropriada para o join
-                    if Lst_Temp.IndexOf( LstTabelas_Selecionadas.Items[j + 1] ) = -1 then
+                    // Pegando o nome da tabela apropriada para o join
+                    if Lst_Temp.IndexOf(LstTabelas_Selecionadas.Items[j + 1]
+                      ) = -1 then
                       Tabela_Selecionada := LstTabelas_Selecionadas.Items[j + 1]
                     else
                       Tabela_Selecionada := LstTabelas_Selecionadas.Items[k];
 
-                    //Formatando o join, tirando os caracteres de controle
-                    Lista_Joins.Items[i] := Copy( Lista_Joins.Items[i], 1, Pos( 'TABELA', Lista_Joins.Items[i] ) -1 ) + ' ' + Tabela_Selecionada + ' ' + Copy( Lista_Joins.Items[i], Pos( 'TABELA', Lista_Joins.Items[i] ) + 7, Length( Lista_Joins.Items[i] ) );
-                    Linha_Temp := Copy( Lista_Joins.Items[i], Pos( ':', Lista_Joins.Items[i] ) + 2, Length( Lista_Joins.Items[i] ) );
+                    // Formatando o join, tirando os caracteres de controle
+                    Lista_Joins.Items[i] := Copy(Lista_Joins.Items[i], 1,
+                      Pos('TABELA', Lista_Joins.Items[i]) - 1) + ' ' +
+                      Tabela_Selecionada + ' ' + Copy(Lista_Joins.Items[i],
+                      Pos('TABELA', Lista_Joins.Items[i]) + 7,
+                      Length(Lista_Joins.Items[i]));
+                    Linha_Temp := Copy(Lista_Joins.Items[i],
+                      Pos(':', Lista_Joins.Items[i]) + 2,
+                      Length(Lista_Joins.Items[i]));
 
-                    //adicionando JOIN ao script com par·grafo
-                    MemScript.Lines.Add( Paragrafo + Linha_Temp );
+                    // adicionando JOIN ao script com par√°grafo
+                    MemScript.Lines.Add(Paragrafo + Linha_Temp);
 
-                    //Aumentando o par·grafo
+                    // Aumentando o par√°grafo
                     Paragrafo := Paragrafo + '      ';
                   end;
                 end;
@@ -442,219 +505,236 @@ begin
     end;
   end;
 
-  //Selecionando o filtro "WHERE"
-  For i := 0 to LstFiltro.Items.Count -1 do
+  // Selecionando o filtro "WHERE"
+  For i := 0 to LstFiltro.Items.Count - 1 do
   begin
-    if Pos( 'Maior ou Igual', LstFiltro.Items[i] ) > 0 then
+    if Pos('Maior ou Igual', LstFiltro.Items[i]) > 0 then
     begin
       Operacao := ' >= ';
 
       Prefixo := '';
-      SulFixo := '';
-    end else
-    if Pos( 'Menor ou Igual', LstFiltro.Items[i] ) > 0 then
+      Sulfixo := '';
+    end
+    else if Pos('Menor ou Igual', LstFiltro.Items[i]) > 0 then
     begin
       Operacao := ' <= ';
 
       Prefixo := '';
-      SulFixo := '';
+      Sulfixo := '';
     end
-    else
-    if Pos( 'Igual', LstFiltro.Items[i] ) > 0 then
+    else if Pos('Igual', LstFiltro.Items[i]) > 0 then
     begin
       Operacao := ' = ';
 
       Prefixo := '';
-      SulFixo := '';
+      Sulfixo := '';
     end
-    else
-    if Pos( 'Diferente', LstFiltro.Items[i] ) > 0 then
+    else if Pos('Diferente', LstFiltro.Items[i]) > 0 then
     begin
       Operacao := ' <> ';
 
       Prefixo := '';
-      SulFixo := '';
+      Sulfixo := '';
     end
-    else
-    if ( Pos( 'N„o ComeÁando com', LstFiltro.Items[i] ) > 0 ) then
+    else if (Pos('N√£o Come√ßando com', LstFiltro.Items[i]) > 0) then
     begin
       Operacao := ' NOT LIKE ';
 
       Prefixo := '''';
-      SulFixo := '%''';
+      Sulfixo := '%''';
     end
-    else
-    if ( Pos( 'N„o Contendo', LstFiltro.Items[i] ) > 0 ) then
+    else if (Pos('N√£o Contendo', LstFiltro.Items[i]) > 0) then
     begin
       Operacao := ' NOT LIKE ';
 
       Prefixo := '''%';
-      SulFixo := '%''';
+      Sulfixo := '%''';
     end
-    else
-    if ( Pos( 'ComeÁando com', LstFiltro.Items[i] ) > 0 ) then
+    else if (Pos('Come√ßando com', LstFiltro.Items[i]) > 0) then
     begin
       Operacao := ' LIKE ';
 
       Prefixo := '''';
-      SulFixo := '%''';
+      Sulfixo := '%''';
     end
-    else
-    if ( Pos( 'Contendo', LstFiltro.Items[i] ) > 0 ) then
+    else if (Pos('Contendo', LstFiltro.Items[i]) > 0) then
     begin
       Operacao := ' LIKE ';
 
       Prefixo := '''%';
-      SulFixo := '%''';
+      Sulfixo := '%''';
     end;
 
-    Where := Copy( LstFiltro.Items[i], 1, Pos( '"', LstFiltro.Items[i] ) -2 ) + Operacao + Prefixo + Copy( LstFiltro.Items[i], Pos( '[', LstFiltro.Items[i] ) + 1, Pos( ']', LstFiltro.Items[i] ) -1 - Pos( '[', LstFiltro.Items[i] ) ) + Sulfixo;
+    Where := Copy(LstFiltro.Items[i], 1, Pos('"', LstFiltro.Items[i]) - 2) +
+      Operacao + Prefixo + Copy(LstFiltro.Items[i], Pos('[', LstFiltro.Items[i])
+      + 1, Pos(']', LstFiltro.Items[i]) - 1 - Pos('[', LstFiltro.Items[i]))
+      + Sulfixo;
 
-    if i <> LstFiltro.Count -1 then
+    if i <> LstFiltro.Count - 1 then
       Where := Where + ' AND ';
 
     if i = 0 then
-      MemScript.Lines.Add( 'WHERE ' + Where )
+      MemScript.Lines.Add('WHERE ' + Where)
     else
-      MemScript.Lines.Add( '      ' + Where );
+      MemScript.Lines.Add('      ' + Where);
   end;
 
-  //Selecionando o GROUP BY
-  if LstCampos_Agregados.items.Count > 0 then
+  // Selecionando o GROUP BY
+  if LstCampos_Agregados.Items.Count > 0 then
   begin
-    For i := 0 to LstCampos_Selecionados.Items.Count -1 do
+    For i := 0 to LstCampos_Selecionados.Items.Count - 1 do
     begin
-      if i = LstCampos_Selecionados.Items.Count -1 then
+      if i = LstCampos_Selecionados.Items.Count - 1 then
       begin
         if i = 0 then
-          MemScript.Lines.Add( 'GROUP BY ' + LstCampos_Selecionados.Items[i] )
+          MemScript.Lines.Add('GROUP BY ' + LstCampos_Selecionados.Items[i])
         else
-          MemScript.Lines.Add( '      ' + LstCampos_Selecionados.Items[i] );
-      end else
+          MemScript.Lines.Add('      ' + LstCampos_Selecionados.Items[i]);
+      end
+      else
       begin
         if i = 0 then
-          MemScript.Lines.Add( 'GROUP BY ' + LstCampos_Selecionados.Items[i] + ', ')
+          MemScript.Lines.Add('GROUP BY ' + LstCampos_Selecionados.Items
+            [i] + ', ')
         else
-          MemScript.Lines.Add( '      ' + LstCampos_Selecionados.Items[i] + ', ');
+          MemScript.Lines.Add('      ' + LstCampos_Selecionados.Items
+            [i] + ', ');
       end;
     end;
   end;
 
-  //Selecionando o filtro "HAVING"
-  For i := 0 to LstFiltro_Campos_Agregados.Items.Count -1 do
+  // Selecionando o filtro "HAVING"
+  For i := 0 to LstFiltro_Campos_Agregados.Items.Count - 1 do
   begin
-    if Pos( 'Maior ou Igual', LstFiltro_Campos_Agregados.Items[i] ) > 0 then
+    if Pos('Maior ou Igual', LstFiltro_Campos_Agregados.Items[i]) > 0 then
       Operacao := ' >= '
-    else
-    if Pos( 'Menor ou Igual', LstFiltro_Campos_Agregados.Items[i] ) > 0 then
+    else if Pos('Menor ou Igual', LstFiltro_Campos_Agregados.Items[i]) > 0 then
       Operacao := ' <= '
-    else
-    if Pos( 'Igual', LstFiltro_Campos_Agregados.Items[i] ) > 0 then
+    else if Pos('Igual', LstFiltro_Campos_Agregados.Items[i]) > 0 then
       Operacao := ' = '
-    else
-    if Pos( 'Diferente', LstFiltro_Campos_Agregados.Items[i] ) > 0 then
+    else if Pos('Diferente', LstFiltro_Campos_Agregados.Items[i]) > 0 then
       Operacao := ' <> ';
 
-    Where := Copy( LstFiltro_Campos_Agregados.Items[i], 1, Pos( '"', LstFiltro_Campos_Agregados.Items[i] ) -2 ) + Operacao + Copy( LstFiltro_Campos_Agregados.Items[i], Pos( '[', LstFiltro_Campos_Agregados.Items[i] ) + 1, Pos( ']', LstFiltro_Campos_Agregados.Items[i] ) -1 - Pos( '[', LstFiltro_Campos_Agregados.Items[i] ) );
+    Where := Copy(LstFiltro_Campos_Agregados.Items[i], 1,
+      Pos('"', LstFiltro_Campos_Agregados.Items[i]) - 2) + Operacao +
+      Copy(LstFiltro_Campos_Agregados.Items[i],
+      Pos('[', LstFiltro_Campos_Agregados.Items[i]) + 1,
+      Pos(']', LstFiltro_Campos_Agregados.Items[i]) - 1 - Pos('[',
+      LstFiltro_Campos_Agregados.Items[i]));
 
-    if i = LstFiltro_Campos_Agregados.Items.Count -1 then
+    if i = LstFiltro_Campos_Agregados.Items.Count - 1 then
     begin
       if i = 0 then
-        MemScript.Lines.Add( 'HAVING ' + Where )
+        MemScript.Lines.Add('HAVING ' + Where)
       else
-        MemScript.Lines.Add( '       ' + Where );
-    end else
+        MemScript.Lines.Add('       ' + Where);
+    end
+    else
     begin
       if i = 0 then
-        MemScript.Lines.Add( 'HAVING ' + Where + ' AND ')
+        MemScript.Lines.Add('HAVING ' + Where + ' AND ')
       else
-        MemScript.Lines.Add( '       ' + Where + ' AND ');
+        MemScript.Lines.Add('       ' + Where + ' AND ');
     end;
   end;
 
-  //Selecionando ORDER BY. Sempre pelo Ìndice do campo
-  For i := 0 to LstOrdem.Items.Count -1 do
+  // Selecionando ORDER BY. Sempre pelo √≠ndice do campo
+  For i := 0 to LstOrdem.Items.Count - 1 do
   begin
-    //Se n„o for o ˙ltimo campo da lista devo adicionar um sulfixo com ','
-    if i <> LstOrdem.Items.Count -1 then
+    // Se n√£o for o √∫ltimo campo da lista devo adicionar um sulfixo com ','
+    if i <> LstOrdem.Items.Count - 1 then
       Sulfixo := ', '
     else
       Sulfixo := '';
 
     if i = 0 then
     begin
-      if Pos( '[Crescente]', LstOrdem.Items[i] ) > 0 then
-        MemScript.Lines.Add( 'ORDER BY ' + Acha_Indice( Copy( LstOrdem.Items[i], 1, Pos( '[Crescente]', LstOrdem.Items[i] ) -2 ) ) + Sulfixo )
+      if Pos('[Crescente]', LstOrdem.Items[i]) > 0 then
+        MemScript.Lines.Add('ORDER BY ' + Acha_Indice(Copy(LstOrdem.Items[i], 1,
+          Pos('[Crescente]', LstOrdem.Items[i]) - 2)) + Sulfixo)
       else
-        MemScript.Lines.Add( 'ORDER BY ' + Acha_Indice( Copy( LstOrdem.Items[i], 1, Pos( '[Decrescente]', LstOrdem.Items[i] ) -2 ) ) + ' DESC' + Sulfixo );
-    end else
+        MemScript.Lines.Add('ORDER BY ' + Acha_Indice(Copy(LstOrdem.Items[i], 1,
+          Pos('[Decrescente]', LstOrdem.Items[i]) - 2)) + ' DESC' + Sulfixo);
+    end
+    else
     begin
-      if Pos( '[Crescente]', LstOrdem.Items[i] ) > 0 then
-        MemScript.Lines.Add( '         ' + Acha_Indice( Copy( LstOrdem.Items[i], 1, Pos( '[Crescente]', LstOrdem.Items[i] ) -2 ) ) + Sulfixo )
+      if Pos('[Crescente]', LstOrdem.Items[i]) > 0 then
+        MemScript.Lines.Add('         ' + Acha_Indice(Copy(LstOrdem.Items[i], 1,
+          Pos('[Crescente]', LstOrdem.Items[i]) - 2)) + Sulfixo)
       else
-        MemScript.Lines.Add( '         ' + Acha_Indice( Copy( LstOrdem.Items[i], 1, Pos( '[Decrescente]', LstOrdem.Items[i] ) -2 ) ) + ' DESC' + Sulfixo );
+        MemScript.Lines.Add('         ' + Acha_Indice(Copy(LstOrdem.Items[i], 1,
+          Pos('[Decrescente]', LstOrdem.Items[i]) - 2)) + ' DESC' + Sulfixo);
     end;
   end;
 end;
 
-function TFrmPrincipal.Eh_View : Boolean;
+function TFrmPrincipal.eh_view: Boolean;
 begin
-     Result := False;
+  Result := False;
 
-     if LstTabelas_Selecionadas.Count = 1 then
-     begin
-          Query.SQL.Text := 'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' + LstTabelas_Selecionadas.Items[0] + '''';
-          Query.Open;
+  if LstTabelas_Selecionadas.Count = 1 then
+  begin
+    Query.SQL.Text :=
+      'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' +
+      LstTabelas_Selecionadas.Items[0] + '''';
+    Query.Open;
 
-          Result := not Query.IsEmpty;
+    Result := not Query.IsEmpty;
 
-          Query.Close;
-     end;
+    Query.Close;
+  end;
 end;
 
-function TFrmPrincipal.Verifica_View : Boolean;
-var i : integer;
+function TFrmPrincipal.Verifica_View: Boolean;
+var
+  i: Integer;
 begin
-     Result := True;
+  Result := True;
 
-     if LstTabelas_Selecionadas.Count > 0 then
-     begin
-          For i := 0 to LstTabelas_Selecionadas.Items.Count -1 do
-          begin
-               if LstTabelas_Selecionadas.Items[i] <> CmbTabelas.Items[CmbTabelas.ItemIndex] then
-               begin
-                    Query.SQL.Text := 'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' + LstTabelas_Selecionadas.Items[i] + '''';
-                    Query.Open;
+  if LstTabelas_Selecionadas.Count > 0 then
+  begin
+    For i := 0 to LstTabelas_Selecionadas.Items.Count - 1 do
+    begin
+      if LstTabelas_Selecionadas.Items[i] <> CmbTabelas.Items
+        [CmbTabelas.ItemIndex] then
+      begin
+        Query.SQL.Text :=
+          'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' +
+          LstTabelas_Selecionadas.Items[i] + '''';
+        Query.Open;
 
-                    if not Query.IsEmpty then
-                    begin
-                         Result := False;
-                    end;
+        if not Query.IsEmpty then
+        begin
+          Result := False;
+        end;
 
-                    Query.Close;
-               end;
-          end;
+        Query.Close;
+      end;
+    end;
 
-          if Result then
-          begin
-               if LstTabelas_Selecionadas.Items.IndexOf( CmbTabelas.Items[CmbTabelas.ItemIndex] ) = -1 then
-               begin
-                    Query.SQL.Text := 'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' + CmbTabelas.Items[CmbTabelas.ItemIndex] + '''';
-                    Query.Open;
+    if Result then
+    begin
+      if LstTabelas_Selecionadas.Items.IndexOf
+        (CmbTabelas.Items[CmbTabelas.ItemIndex]) = -1 then
+      begin
+        Query.SQL.Text :=
+          'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' +
+          CmbTabelas.Items[CmbTabelas.ItemIndex] + '''';
+        Query.Open;
 
-                    Result := Query.IsEmpty;
+        Result := Query.IsEmpty;
 
-                    Query.Close;
-               end;
-          end;
-     end;
+        Query.Close;
+      end;
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.FormCreate(Sender: TObject);
 begin
   FAppPathName := ExtractFilePath(ParamStr(0));
 
-  //Abre ConfiguraÁıes de Conex„o
+  // Abre Configura√ß√µes de Conex√£o
   LoadConnection;
 end;
 
@@ -671,89 +751,92 @@ begin
 end;
 
 procedure TFrmPrincipal.BtnAddClick(Sender: TObject);
-var Funcao : String;
+var
+  Funcao: String;
 begin
-     if LstCampos.ItemIndex <> -1 then
-     begin
-          if GBCampos_Selecionados.ActivePageIndex = 0 then
+  if LstCampos.ItemIndex <> -1 then
+  begin
+    if GBCampos_Selecionados.ActivePageIndex = 0 then
+    begin
+      if LstTabelas_Selecionadas.ItemIndex <> -1 then
+      begin
+        if LstCampos_Selecionados.Items.IndexOf
+          (LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] +
+          '.' + LstCampos.Items[LstCampos.ItemIndex]) = -1 then
+        begin
+          LstCampos_Selecionados.Items.Add(LstTabelas_Selecionadas.Items
+            [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items
+            [LstCampos.ItemIndex]);
+        end;
+
+        if LstCampos.ItemIndex < LstCampos.Items.Count - 1 then
+        begin
+          LstCampos.ItemIndex := LstCampos.ItemIndex + 1;
+          LstCampos.Selected[LstCampos.ItemIndex] := True;
+        end;
+      end
+      else
+      begin
+        MessageDlg('Selecione a tabela', MtInformation, [mbok], 0);
+      end;
+    end
+    else
+    begin
+      if CmbFuncao.ItemIndex <> -1 then
+      begin
+        if CmbFuncao.Text = 'Contar' then
+        begin
+          Funcao := 'COUNT(';
+        end
+        else if CmbFuncao.Text = 'M√°ximo' then
+        begin
+          Funcao := 'MAX(';
+        end
+        else if CmbFuncao.Text = 'M√©dia' then
+        begin
+          Funcao := 'AVG(';
+        end
+        else if CmbFuncao.Text = 'M√≠nimo' then
+        begin
+          Funcao := 'MIN(';
+        end
+        else if CmbFuncao.Text = 'Soma' then
+        begin
+          Funcao := 'SUM(';
+        end;
+
+        if LstTabelas_Selecionadas.ItemIndex <> -1 then
+        begin
+          LstCampos_Agregados.Items.Add(Funcao + LstTabelas_Selecionadas.Items
+            [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items
+            [LstCampos.ItemIndex] + ')');
+
+          if LstCampos_Agregados.ItemIndex < LstCampos_Agregados.Items.Count - 1
+          then
           begin
-               if LstTabelas_Selecionadas.ItemIndex <> -1 then
-               begin
-                    if LstCampos_Selecionados.Items.IndexOf( LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[LstCampos.ItemIndex] ) = -1 then
-                    begin
-                         LstCampos_Selecionados.Items.Add( LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[LstCampos.ItemIndex] );
-                    end;
-
-                    if LstCampos.ItemIndex < LstCampos.Items.Count -1 then
-                    begin
-                         LstCampos.ItemIndex := LstCampos.ItemIndex + 1;
-                         LstCampos.Selected[LstCampos.ItemIndex] := True;
-                    end;
-               end
-               else
-               begin
-                    MessageDlg( 'Selecione a tabela', MtInformation, [mbok], 0 );
-               end;
-          end
-          else
-          begin
-               if CmbFuncao.ItemIndex <> -1 then
-               begin
-                    if CmbFuncao.Text = 'Contar' then
-                    begin
-                         Funcao := 'COUNT(';
-                    end
-                    else
-                    if CmbFuncao.Text = 'M·ximo' then
-                    begin
-                         Funcao := 'MAX(';
-                    end
-                    else
-                    if CmbFuncao.Text = 'MÈdia' then
-                    begin
-                         Funcao := 'AVG(';
-                    end
-                    else
-                    if CmbFuncao.Text = 'MÌnimo' then
-                    begin
-                         Funcao := 'MIN(';
-                    end
-                    else
-                    if CmbFuncao.Text = 'Soma' then
-                    begin
-                         Funcao := 'SUM(';
-                    end;
-
-                    if LstTabelas_Selecionadas.ItemIndex <> -1 then
-                    begin
-                         LstCampos_Agregados.Items.Add( Funcao + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[LstCampos.ItemIndex] + ')' );
-
-                         if LstCampos_Agregados.ItemIndex < LstCampos_Agregados.Items.Count -1 then
-                         begin
-                              LstCampos_Agregados.ItemIndex := LstCampos_Agregados.ItemIndex + 1;
-                              LstCampos_Agregados.Selected[LstCampos_Agregados.ItemIndex] := True;
-                         end;
-                    end
-                    else
-                    begin
-                         MessageDlg( 'Selecione a tabela', MtInformation, [mbok], 0 );
-                    end;
-               end;
+            LstCampos_Agregados.ItemIndex := LstCampos_Agregados.ItemIndex + 1;
+            LstCampos_Agregados.Selected[LstCampos_Agregados.ItemIndex] := True;
           end;
-     end;
+        end
+        else
+        begin
+          MessageDlg('Selecione a tabela', MtInformation, [mbok], 0);
+        end;
+      end;
+    end;
+  end;
 
-     PCCondicao_OrdemChange( PCCondicao_Ordem );
+  PCCondicao_OrdemChange(PCCondicao_Ordem);
 end;
 
 procedure TFrmPrincipal.btnConectarClick(Sender: TObject);
 begin
-  Conectar(CDS_CNN.FieldByName('CNN_TYPE').AsString,
-           Cxo,
-           CDS_CNN.FieldByName('CNN_SERVER').AsString,
-           CDS_CNN.FieldByName('CNN_DATABASE').AsString,
-           CDS_CNN.FieldByName('CNN_USERNAME').AsString,
-           CDS_CNN.FieldByName('CNN_PASSWORD').AsString,
-           CDS_CNN.FieldByName('CNN_PORT').AsInteger);
+  Conectar(CDS_CNN.FieldByName('CNN_TYPE').AsString, Cxo,
+    CDS_CNN.FieldByName('CNN_SERVER').AsString,
+    CDS_CNN.FieldByName('CNN_DATABASE').AsString,
+    CDS_CNN.FieldByName('CNN_USERNAME').AsString,
+    CDS_CNN.FieldByName('CNN_PASSWORD').AsString,
+    CDS_CNN.FieldByName('CNN_PORT').AsInteger);
 
   if not Cxo.Connected then
     Exit;
@@ -763,7 +846,7 @@ begin
   CmbTabelas.Clear;
   while not Query.Eof do
   begin
-    CmbTabelas.Items.Add( Trim( Query.FieldByName( 'RDB$RELATION_NAME' ).AsString ) );
+    CmbTabelas.Items.Add(Trim(Query.FieldByName('RDB$RELATION_NAME').AsString));
     Query.Next;
   end;
   Query.Close;
@@ -772,193 +855,211 @@ begin
 end;
 
 procedure TFrmPrincipal.BtnAddAllClick(Sender: TObject);
-var I : Integer;
+var
+  i: Integer;
 begin
-     For i := 0 to LstCampos.Count -1 do
-     begin
-          if LstCampos_Selecionados.Items.IndexOf( LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[i] ) = -1 then
-          begin
-               LstCampos_Selecionados.Items.Add( LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[i] );
-          end;
-     end;
+  For i := 0 to LstCampos.Count - 1 do
+  begin
+    if LstCampos_Selecionados.Items.IndexOf(LstTabelas_Selecionadas.Items
+      [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[i]) = -1 then
+    begin
+      LstCampos_Selecionados.Items.Add(LstTabelas_Selecionadas.Items
+        [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[i]);
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.BtnRemClick(Sender: TObject);
 begin
-     if GBCampos_Selecionados.ActivePageIndex = 0 then
-     begin
-          if LstCampos_Selecionados.ItemIndex <> -1 then
-          begin
-               LstCampos_Selecionados.DeleteSelected;
+  if GBCampos_Selecionados.ActivePageIndex = 0 then
+  begin
+    if LstCampos_Selecionados.ItemIndex <> -1 then
+    begin
+      LstCampos_Selecionados.DeleteSelected;
 
-               if LstCampos_Selecionados.Count > 0 then
-               begin
-                    LstCampos_Selecionados.ItemIndex := LstCampos_Selecionados.Items.Count -1;
-                    LstCampos_Selecionados.Selected[LstCampos_Selecionados.ItemIndex] := True;
-               end;
-          end;
-     end
-     else
-     begin
-          if LstCampos_Agregados.ItemIndex <> -1 then
-          begin
-               LstCampos_Agregados.DeleteSelected;
+      if LstCampos_Selecionados.Count > 0 then
+      begin
+        LstCampos_Selecionados.ItemIndex :=
+          LstCampos_Selecionados.Items.Count - 1;
+        LstCampos_Selecionados.Selected
+          [LstCampos_Selecionados.ItemIndex] := True;
+      end;
+    end;
+  end
+  else
+  begin
+    if LstCampos_Agregados.ItemIndex <> -1 then
+    begin
+      LstCampos_Agregados.DeleteSelected;
 
-               if LstCampos_Agregados.Count > 0 then
-               begin
-                    LstCampos_Agregados.ItemIndex := LstCampos_Agregados.Items.Count -1;
-                    LstCampos_Agregados.Selected[LstCampos_Agregados.ItemIndex] := True;
-               end;
-          end;
-     end;
+      if LstCampos_Agregados.Count > 0 then
+      begin
+        LstCampos_Agregados.ItemIndex := LstCampos_Agregados.Items.Count - 1;
+        LstCampos_Agregados.Selected[LstCampos_Agregados.ItemIndex] := True;
+      end;
+    end;
+  end;
 
-     PCCondicao_OrdemChange( PCCondicao_Ordem );
+  PCCondicao_OrdemChange(PCCondicao_Ordem);
 end;
 
 procedure TFrmPrincipal.BtnRemAllClick(Sender: TObject);
 begin
-     if MessageDlg( 'Confirma a remoÁ„o de todas as tabelas?', MtConfirmation, [mbyes, mbno], 0 ) = MrYes then
-     begin
-          LstTabelas_Selecionadas.Clear;
-          LstCampos_Selecionados.Clear;
-          LstCampos_Agregados.Clear;
-          LstCampos.Clear;
-          LstCampos_Filtro.Clear;
-          LstOrdem.Clear;
-          LstFiltro_Campos_Agregados.Clear;
-          LstFiltro.Clear;
-          MemPlan.Clear;
-          MemScript.Clear;
+  if MessageDlg('Confirma a remo√ß√£o de todas as tabelas?', MtConfirmation,
+    [mbyes, mbno], 0) = MrYes then
+  begin
+    LstTabelas_Selecionadas.Clear;
+    LstCampos_Selecionados.Clear;
+    LstCampos_Agregados.Clear;
+    LstCampos.Clear;
+    LstCampos_Filtro.Clear;
+    LstOrdem.Clear;
+    LstFiltro_Campos_Agregados.Clear;
+    LstFiltro.Clear;
+    MemPlan.Clear;
+    MemScript.Clear;
 
-          PCCondicao_OrdemChange( PCCondicao_Ordem );
-     end;
+    PCCondicao_OrdemChange(PCCondicao_Ordem);
+  end;
 end;
 
 procedure TFrmPrincipal.Button1Click(Sender: TObject);
-var Condicao : String;
+var
+  Condicao: String;
 begin
-     if PCCondicao_Ordem.ActivePageIndex in [0,1] then
-     begin
-          if LstCampos_Filtro.ItemIndex <> -1 then
-          begin
-               if InputQuery( 'Adicionar CondiÁ„o', 'Valor:', Condicao ) then
-               begin
-                    if PCCondicao_Ordem.ActivePageIndex = 0 then
-                    begin
-                         LstFiltro.Items.Add( LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] + ' "' + CmbCondicao.Items[CmbCondicao.ItemIndex] + '" [' + Condicao + ']' );
-                    end
-                    else
-                    if PCCondicao_Ordem.ActivePageIndex = 1 then
-                    begin
-                         LstFiltro_Campos_Agregados.Items.Add( LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] + ' "' + CmbCondicao_Agregados.Items[CmbCondicao_Agregados.ItemIndex] + '" [' + Condicao + ']' );
-                    end;
-               end;
-          end
-          else
-          begin
-               MessageDlg( 'Selecione um Campo para filtragem', MtInformation, [mbok], 0 );
-          end;
-     end
-     else
-     if PCCondicao_Ordem.ActivePageIndex = 2 then
-     begin
-          if LstCampos_Filtro.ItemIndex <> -1 then
-          begin
-               LstOrdem.Items.Add( LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] + ' [' + CmbOrdem.Text + ']' );
-          end
-          else
-          begin
-               MessageDlg( 'Selecione um Campo para OrdenaÁ„o', MtInformation, [mbok], 0 );
-          end;
-     end;
+  if PCCondicao_Ordem.ActivePageIndex in [0, 1] then
+  begin
+    if LstCampos_Filtro.ItemIndex <> -1 then
+    begin
+      if InputQuery('Adicionar Condi√ß√£o', 'Valor:', Condicao) then
+      begin
+        if PCCondicao_Ordem.ActivePageIndex = 0 then
+        begin
+          LstFiltro.Items.Add(LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex]
+            + ' "' + CmbCondicao.Items[CmbCondicao.ItemIndex] + '" [' +
+            Condicao + ']');
+        end
+        else if PCCondicao_Ordem.ActivePageIndex = 1 then
+        begin
+          LstFiltro_Campos_Agregados.Items.Add
+            (LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] + ' "' +
+            CmbCondicao_Agregados.Items[CmbCondicao_Agregados.ItemIndex] + '" ['
+            + Condicao + ']');
+        end;
+      end;
+    end
+    else
+    begin
+      MessageDlg('Selecione um Campo para filtragem', MtInformation, [mbok], 0);
+    end;
+  end
+  else if PCCondicao_Ordem.ActivePageIndex = 2 then
+  begin
+    if LstCampos_Filtro.ItemIndex <> -1 then
+    begin
+      LstOrdem.Items.Add(LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] +
+        ' [' + CmbOrdem.Text + ']');
+    end
+    else
+    begin
+      MessageDlg('Selecione um Campo para Ordena√ß√£o', MtInformation, [mbok], 0);
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.Button2Click(Sender: TObject);
 begin
-     if PCCondicao_Ordem.ActivePageIndex = 0 then
-     begin
-          LstFiltro.DeleteSelected;
-     end
-     else
-     if PCCondicao_Ordem.ActivePageIndex = 1 then
-     begin
-          LstFiltro_Campos_Agregados.DeleteSelected;
-     end
-     else
-     if PCCondicao_Ordem.ActivePageIndex = 2 then
-     begin
-          LstOrdem.DeleteSelected;
-     end;
+  if PCCondicao_Ordem.ActivePageIndex = 0 then
+  begin
+    LstFiltro.DeleteSelected;
+  end
+  else if PCCondicao_Ordem.ActivePageIndex = 1 then
+  begin
+    LstFiltro_Campos_Agregados.DeleteSelected;
+  end
+  else if PCCondicao_Ordem.ActivePageIndex = 2 then
+  begin
+    LstOrdem.DeleteSelected;
+  end;
 end;
 
 procedure TFrmPrincipal.Button3Click(Sender: TObject);
 begin
-     if PCCondicao_Ordem.ActivePageIndex = 0 then
-     begin
-          if ( LstCampos_Filtro.ItemIndex <> -1 ) and ( CmbCondicao.ItemIndex < 4 ) then
-          begin
-               LstFiltro.Items.Add( LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] + ' "' + CmbCondicao.Items[CmbCondicao.ItemIndex] + '" [:' + Copy( LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex], Pos('.', LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] ) + 1, Length( LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] ) ) + ']' );
-          end;
-     end;
+  if PCCondicao_Ordem.ActivePageIndex = 0 then
+  begin
+    if (LstCampos_Filtro.ItemIndex <> -1) and (CmbCondicao.ItemIndex < 4) then
+    begin
+      LstFiltro.Items.Add(LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex] +
+        ' "' + CmbCondicao.Items[CmbCondicao.ItemIndex] + '" [:' +
+        Copy(LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex],
+        Pos('.', LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex]) + 1,
+        Length(LstCampos_Filtro.Items[LstCampos_Filtro.ItemIndex])) + ']');
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.PageControl1Change(Sender: TObject);
-var i : Integer;
-    Parametro : String;
+var
+  i: Integer;
+  Parametro: String;
 begin
-     if PageControl1.ActivePageIndex = 1 then
-     begin
-          BtnGera_SqlClick( BtnGera_Sql );
-          BtnPreparaClick( BtnPrepara );
-          
-          if Trim( MemScript.Text ) <> '' then
-          begin
-               if not eh_view then
-               begin
-                    if Pos( 'ORDER BY', MemScript.Text ) > 0 then
-                    begin
-                         Query_Relatorio.SQL.Text := Copy( MemScript.Text, 1, Pos( 'ORDER BY', MemScript.Text ) -1 ) + #13 + MemPlan.Text + #13 + Copy( MemScript.Text, Pos( 'ORDER BY', MemScript.Text ), Length( MemScript.Text ) );
-                    end
-                    else
-                    begin
-                         Query_Relatorio.SQL.Text := MemScript.Text + #13 + MemPlan.Text;
-                    end;
-               end
-               else
-               begin
-                    Query_Relatorio.SQL.Text := MemScript.Text;
-               end;
+  if PageControl1.ActivePageIndex = 1 then
+  begin
+    BtnGera_SqlClick(BtnGera_Sql);
+    BtnPreparaClick(BtnPrepara);
 
-               For i := 0 to Query_Relatorio.ParamCount -1 do
-               begin
-                    Parametro := '';
+    if Trim(MemScript.Text) <> '' then
+    begin
+      if not eh_view then
+      begin
+        if Pos('ORDER BY', MemScript.Text) > 0 then
+        begin
+          Query_Relatorio.SQL.Text := Copy(MemScript.Text, 1,
+            Pos('ORDER BY', MemScript.Text) - 1) + #13 + MemPlan.Text + #13 +
+            Copy(MemScript.Text, Pos('ORDER BY', MemScript.Text),
+            Length(MemScript.Text));
+        end
+        else
+        begin
+          Query_Relatorio.SQL.Text := MemScript.Text + #13 + MemPlan.Text;
+        end;
+      end
+      else
+      begin
+        Query_Relatorio.SQL.Text := MemScript.Text;
+      end;
 
-                    if InputQuery( 'Digite valor do Par‚metro', Query_Relatorio.Params[i].Name, Parametro ) then
-                    begin
-                         Query_Relatorio.Params[i].Value := Parametro;
-                    end
-                    else
-                    begin
-                         Exit;
-                    end;
-               end;
+      For i := 0 to Query_Relatorio.ParamCount - 1 do
+      begin
+        Parametro := '';
 
-               Query_Relatorio.Open;
-          end;
-     end
-     else
-     begin
-          Query_Relatorio.Close;
-     end;
+        if InputQuery('Digite valor do Par√¢metro',
+          Query_Relatorio.Params[i].Name, Parametro) then
+        begin
+          Query_Relatorio.Params[i].Value := Parametro;
+        end
+        else
+        begin
+          Exit;
+        end;
+      end;
+
+      Query_Relatorio.Open;
+    end;
+  end
+  else
+  begin
+    Query_Relatorio.Close;
+  end;
 end;
 
 procedure TFrmPrincipal.LoadConnection;
 begin
-  if FileExists(ExtractFilePath(ParamStr(0))+'Connection.xml') then
+  if FileExists(ExtractFilePath(ParamStr(0)) + 'Connection.xml') then
   begin
     CDS_CNN.Close;
     CDS_CNN.CreateDataSet;
-    CDS_CNN.LoadFromFile(FAppPathName+'Connection.xml');
+    CDS_CNN.LoadFromFile(FAppPathName + 'Connection.xml');
     CDS_CNN.Open;
     CDS_CNN.First;
 
@@ -970,104 +1071,114 @@ begin
     end;
     Combo_Connection.ItemIndex := 0;
     Combo_ConnectionChange(Self);
-  end else
+  end
+  else
   begin
-  CDS_CNN.CreateDataSet;
+    CDS_CNN.CreateDataSet;
   end;
 end;
 
 procedure TFrmPrincipal.LstCampos_AgregadosDblClick(Sender: TObject);
-var Linha : String;
+var
+  Linha: String;
 begin
-     if LstCampos_Agregados.ItemIndex <> -1 then
-     begin
-          Linha := LstCampos_Agregados.Items[ LstCampos_Agregados.ItemIndex];
+  if LstCampos_Agregados.ItemIndex <> -1 then
+  begin
+    Linha := LstCampos_Agregados.Items[LstCampos_Agregados.ItemIndex];
 
-          if InputQuery( 'Alterar campo agregado', 'Campo Agregado', Linha ) then
-          begin
-               LstCampos_Agregados.Items[ LstCampos_Agregados.ItemIndex] := Linha;
-          end;
-     end;
+    if InputQuery('Alterar campo agregado', 'Campo Agregado', Linha) then
+    begin
+      LstCampos_Agregados.Items[LstCampos_Agregados.ItemIndex] := Linha;
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.PCCondicao_OrdemChange(Sender: TObject);
-var i : Integer;
+var
+  i: Integer;
 begin
-     if PCCondicao_Ordem.ActivePageIndex = 0 then
-     begin
-          LstCampos_Filtro.Clear;
+  if PCCondicao_Ordem.ActivePageIndex = 0 then
+  begin
+    LstCampos_Filtro.Clear;
 
-          if LstTabelas_Selecionadas.ItemIndex = -1 then
-          begin
-               if LstTabelas_Selecionadas.Items.Count > 0 then
-               begin
-                    LstTabelas_Selecionadas.ItemIndex := 0;
-               end;
-          end;
+    if LstTabelas_Selecionadas.ItemIndex = -1 then
+    begin
+      if LstTabelas_Selecionadas.Items.Count > 0 then
+      begin
+        LstTabelas_Selecionadas.ItemIndex := 0;
+      end;
+    end;
 
-          if LstTabelas_Selecionadas.ItemIndex <> -1 then
-          begin
-               Query.SQL.Text := ' SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$RELATION_NAME = ''' + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + ''' ORDER BY RDB$FIELD_POSITION';
-               Query.Open;
+    if LstTabelas_Selecionadas.ItemIndex <> -1 then
+    begin
+      Query.SQL.Text :=
+        ' SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$RELATION_NAME = '''
+        + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] +
+        ''' ORDER BY RDB$FIELD_POSITION';
+      Query.Open;
 
-               while not Query.Eof do
-               begin
-                    LstCampos_Filtro.Items.Add( Trim( LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + '.' + Query.FieldByName( 'RDB$FIELD_NAME' ).AsString ) );
+      while not Query.Eof do
+      begin
+        LstCampos_Filtro.Items.Add
+          (Trim(LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex]
+          + '.' + Query.FieldByName('RDB$FIELD_NAME').AsString));
 
-                    Query.Next;
-               end;
+        Query.Next;
+      end;
 
-               Query.Close;
-          end;
-     end
-     else
-     if PCCondicao_Ordem.ActivePageIndex = 1 then
-     begin
-          LstCampos_Filtro.Items := LstCampos_Agregados.Items;
-     end
-     else
-     if PCCondicao_Ordem.ActivePageIndex = 2 then
-     begin
-          LstCampos_Filtro.Clear;
+      Query.Close;
+    end;
+  end
+  else if PCCondicao_Ordem.ActivePageIndex = 1 then
+  begin
+    LstCampos_Filtro.Items := LstCampos_Agregados.Items;
+  end
+  else if PCCondicao_Ordem.ActivePageIndex = 2 then
+  begin
+    LstCampos_Filtro.Clear;
 
-          for i := 0 to LstCampos_Selecionados.Items.Count -1 do
-          begin
-               LstCampos_Filtro.Items.Add( LstCampos_Selecionados.Items[i] );
-          end;
+    for i := 0 to LstCampos_Selecionados.Items.Count - 1 do
+    begin
+      LstCampos_Filtro.Items.Add(LstCampos_Selecionados.Items[i]);
+    end;
 
-          for i := 0 to LstCampos_Agregados.Items.Count -1 do
-          begin
-               LstCampos_Filtro.Items.Add( LstCampos_Agregados.Items[i] );
-          end;
-     end;
+    for i := 0 to LstCampos_Agregados.Items.Count - 1 do
+    begin
+      LstCampos_Filtro.Items.Add(LstCampos_Agregados.Items[i]);
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.LstFiltroDblClick(Sender: TObject);
-var Linha : String;
+var
+  Linha: String;
 begin
-     if LstFiltro.ItemIndex <> -1 then
-     begin
-          Linha := LstFiltro.Items[ LstFiltro.ItemIndex];
+  if LstFiltro.ItemIndex <> -1 then
+  begin
+    Linha := LstFiltro.Items[LstFiltro.ItemIndex];
 
-          if InputQuery( 'Alterar CondiÁ„o', 'CondiÁ„o:', Linha ) then
-          begin
-               LstFiltro.Items[ LstFiltro.ItemIndex] := Linha;
-          end;
-     end;
+    if InputQuery('Alterar Condi√ß√£o', 'Condi√ß√£o:', Linha) then
+    begin
+      LstFiltro.Items[LstFiltro.ItemIndex] := Linha;
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.LstFiltro_Campos_AgregadosDblClick(Sender: TObject);
-var Linha : String;
+var
+  Linha: String;
 begin
-     if LstFiltro_Campos_Agregados.ItemIndex <> -1 then
-     begin
-          Linha := LstFiltro_Campos_Agregados.Items[ LstFiltro_Campos_Agregados.ItemIndex];
+  if LstFiltro_Campos_Agregados.ItemIndex <> -1 then
+  begin
+    Linha := LstFiltro_Campos_Agregados.Items
+      [LstFiltro_Campos_Agregados.ItemIndex];
 
-          if InputQuery( 'Alterar condiÁ„o campo agregado', 'CondiÁ„o', Linha ) then
-          begin
-               LstFiltro_Campos_Agregados.Items[ LstFiltro_Campos_Agregados.ItemIndex] := Linha;
-          end;
-     end;
+    if InputQuery('Alterar condi√ß√£o campo agregado', 'Condi√ß√£o', Linha) then
+    begin
+      LstFiltro_Campos_Agregados.Items
+        [LstFiltro_Campos_Agregados.ItemIndex] := Linha;
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.CDS_CNNAfterDelete(DataSet: TDataSet);
@@ -1093,215 +1204,224 @@ end;
 
 procedure TFrmPrincipal.CDS_CNNBeforePost(DataSet: TDataSet);
 begin
-  CDS_CNN.FieldByName('CNN_NAME').AsString := '[ '+UpperCase(CDS_CNN.FieldByName('CNN_TYPE').AsString)+' ] '+ CDS_CNN.FieldByName('CNN_NAME').AsString;
+  CDS_CNN.FieldByName('CNN_NAME').AsString := '[ ' +
+    UpperCase(CDS_CNN.FieldByName('CNN_TYPE').AsString) + ' ] ' +
+    CDS_CNN.FieldByName('CNN_NAME').AsString;
 end;
 
 procedure TFrmPrincipal.CDS_CNNNewRecord(DataSet: TDataSet);
 begin
   CDS_CNN.FieldByName('CNN_TYPE').AsString := 'MSSQL';
   CDS_CNN.FieldByName('CNN_SERVER').AsString := 'LOCALHOST';
-  CDS_CNN.FieldByName('CNN_NAME').AsString := 'Conex„o Local ';
+  CDS_CNN.FieldByName('CNN_NAME').AsString := 'Conex√£o Local ';
 end;
 
 procedure TFrmPrincipal.ChkTodosClick(Sender: TObject);
 begin
-     if not ChkTodos.Checked then
-     begin
-          if EdtFirst.Text = '0' then
-          begin
-               UDFirst.Position := 10;
-          end;
-     end;
+  if not ChkTodos.Checked then
+  begin
+    if EdtFirst.Text = '0' then
+    begin
+      UDFirst.Position := 10;
+    end;
+  end;
 end;
 
 procedure TFrmPrincipal.Combo_ConnectionChange(Sender: TObject);
 begin
-  CDS_CNN.Locate('CNN_NAME',Combo_Connection.Text,[]);
+  CDS_CNN.Locate('CNN_NAME', Combo_Connection.Text, []);
 end;
 
-procedure TFrmPrincipal.Conectar(Driver: String; Conn: TFDConnection; Server, Database, User, Pass: String; Port: Integer);
+procedure TFrmPrincipal.Conectar(Driver: String; Conn: TFDConnection;
+  Server, Database, User, Pass: String; Port: Integer);
 const
-  DBOracle = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%s))(CONNECT_DATA=(SERVICE_NAME=XE)))';
+  DBOracle =
+    '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%s))(CONNECT_DATA=(SERVICE_NAME=XE)))';
 begin
   Conn.Connected := False;
   if (Driver = 'MSSQL') then
   begin
     Conn.Params.Clear;
-    Conn.DriverName                      := 'MSSQL';
-    Conn.Params.DriverID                 := 'MSSQL';
-    Conn.Params.Values['Server']         := Server;
-    Conn.Params.Values['DataBase']       := Database;
-    if (Length(Trim(User)) = 0)and(Length(Trim(Pass)) = 0) then
+    Conn.DriverName := 'MSSQL';
+    Conn.Params.DriverID := 'MSSQL';
+    Conn.Params.Values['Server'] := Server;
+    Conn.Params.Values['DataBase'] := Database;
+    if (Length(Trim(User)) = 0) and (Length(Trim(Pass)) = 0) then
     begin
-      Conn.Params.Values['OSAuthent']    := 'Yes';
-      Conn.Params.Values['User_Name']    := '';//User;
-      Conn.Params.Values['Password']     := '';//Pass;
+      Conn.Params.Values['OSAuthent'] := 'Yes';
+      Conn.Params.Values['User_Name'] := ''; // User;
+      Conn.Params.Values['Password'] := ''; // Pass;
     end
     else
     begin
-      Conn.Params.Values['OSAuthent']    := 'No';
-      Conn.Params.Values['User_Name']    := User;
-      Conn.Params.Values['Password']     := Pass;
+      Conn.Params.Values['OSAuthent'] := 'No';
+      Conn.Params.Values['User_Name'] := User;
+      Conn.Params.Values['Password'] := Pass;
     end;
-    Conn.Params.Values['MetaDefSchema']  := 'dbo';
+    Conn.Params.Values['MetaDefSchema'] := 'dbo';
     Conn.Params.Values['MetaDefCatalog'] := Database;
-    Conn.Params.Values['DriverID']       := 'MSSQL';
+    Conn.Params.Values['DriverID'] := 'MSSQL';
   end
-  else
-  if (Driver = 'Firebird') then
+  else if (Driver = 'Firebird') then
   begin
-     Conn.Params.Clear;
-     Conn.DriverName                     := 'FB';
-     Conn.Params.DriverID                := 'FB';
-     Conn.Params.Values['DriverID']      := 'FB';
-     Conn.Params.Values['Server']        := Server;
-     if Port > 0 then
-        Conn.Params.Values['Port']       := IntToStr(Port);
-     Conn.Params.Values['DataBase']      := Database;
-     Conn.Params.Values['User_Name']     := User;
-     Conn.Params.Values['Password']      := Pass;
+    Conn.Params.Clear;
+    Conn.DriverName := 'FB';
+    Conn.Params.DriverID := 'FB';
+    Conn.Params.Values['DriverID'] := 'FB';
+    Conn.Params.Values['Server'] := Server;
+    if Port > 0 then
+      Conn.Params.Values['Port'] := IntToStr(Port);
+    Conn.Params.Values['DataBase'] := Database;
+    Conn.Params.Values['User_Name'] := User;
+    Conn.Params.Values['Password'] := Pass;
   end
-  else
-  if (Driver = 'Interbase') then
+  else if (Driver = 'Interbase') then
   begin
-     Conn.Params.Clear;
-     Conn.DriverName                     := 'IB';
-     Conn.Params.DriverID                := 'IB';
-     Conn.Params.Values['DriverID']      := 'IB';
-     Conn.Params.Values['Server']        := Server;
-     if Port > 0 then
-        Conn.Params.Values['Port']       := IntToStr(Port);
-     Conn.Params.Values['DataBase']      := Database;
-     Conn.Params.Values['User_Name']     := User;
-     Conn.Params.Values['Password']      := Pass;
+    Conn.Params.Clear;
+    Conn.DriverName := 'IB';
+    Conn.Params.DriverID := 'IB';
+    Conn.Params.Values['DriverID'] := 'IB';
+    Conn.Params.Values['Server'] := Server;
+    if Port > 0 then
+      Conn.Params.Values['Port'] := IntToStr(Port);
+    Conn.Params.Values['DataBase'] := Database;
+    Conn.Params.Values['User_Name'] := User;
+    Conn.Params.Values['Password'] := Pass;
   end
-  else
-  if ( Driver = 'Oracle') then
+  else if (Driver = 'Oracle') then
   begin
-     Conn.Params.Clear;
-     Conn.DriverName                     := 'Ora';
-     Conn.Params.DriverID                := 'Ora';
-     Conn.Params.Values['DataBase']      := Format(DBOracle, [Server, IntToStr(Port)]);
-     Conn.Params.Values['User_Name']     := User;
-     Conn.Params.Values['Password']      := Pass;
+    Conn.Params.Clear;
+    Conn.DriverName := 'Ora';
+    Conn.Params.DriverID := 'Ora';
+    Conn.Params.Values['DataBase'] :=
+      Format(DBOracle, [Server, IntToStr(Port)]);
+    Conn.Params.Values['User_Name'] := User;
+    Conn.Params.Values['Password'] := Pass;
   end
-  else
-  if ( Driver = 'MySQL') then
+  else if (Driver = 'MySQL') then
   begin
-     Conn.Params.Clear;
-     Conn.DriverName                     := 'MySQL';
-     Conn.Params.DriverID                := 'MySQL';
-     Conn.Params.Values['Server']        := Server;
-     if Port > 0 then
-        Conn.Params.Values['Port']       := IntToStr(Port);
-     Conn.Params.Values['DataBase']      := Database;
-     Conn.Params.Values['User_Name']     := User;
-     Conn.Params.Values['Password']      := Pass;
+    Conn.Params.Clear;
+    Conn.DriverName := 'MySQL';
+    Conn.Params.DriverID := 'MySQL';
+    Conn.Params.Values['Server'] := Server;
+    if Port > 0 then
+      Conn.Params.Values['Port'] := IntToStr(Port);
+    Conn.Params.Values['DataBase'] := Database;
+    Conn.Params.Values['User_Name'] := User;
+    Conn.Params.Values['Password'] := Pass;
   end
-  else
-  if ( Driver = 'SQLite') then
+  else if (Driver = 'SQLite') then
   begin
-     Conn.DriverName                     := 'SQLite';
-     Conn.Params.Clear;
-     Conn.Params.DriverID                := 'SQLite';
-     Conn.Params.Values['HostName']      := '';
-     Conn.Params.Values['DataBase']      := Database;
-     Conn.Params.Values['User_Name']     := '';
-     Conn.Params.Values['Password']      := '';
+    Conn.DriverName := 'SQLite';
+    Conn.Params.Clear;
+    Conn.Params.DriverID := 'SQLite';
+    Conn.Params.Values['HostName'] := '';
+    Conn.Params.Values['DataBase'] := Database;
+    Conn.Params.Values['User_Name'] := '';
+    Conn.Params.Values['Password'] := '';
   end
-  else
-  if ( Driver = 'PostgreSQL') then
+  else if (Driver = 'PostgreSQL') then
   begin
-     Conn.DriverName                     := 'PG';
-     Conn.Params.Clear;
-     Conn.Params.DriverID                := 'PG';
-     Conn.Params.Values['Server']        := Server;
-     if Port > 0 then
-        Conn.Params.Values['Port']       := IntToStr(Port);
-     Conn.Params.Values['DataBase']      := Database;
-     Conn.Params.Values['User_Name']     := User;
-     Conn.Params.Values['Password']      := Pass;
+    Conn.DriverName := 'PG';
+    Conn.Params.Clear;
+    Conn.Params.DriverID := 'PG';
+    Conn.Params.Values['Server'] := Server;
+    if Port > 0 then
+      Conn.Params.Values['Port'] := IntToStr(Port);
+    Conn.Params.Values['DataBase'] := Database;
+    Conn.Params.Values['User_Name'] := User;
+    Conn.Params.Values['Password'] := Pass;
   end;
-  Conn.Connected                         := True;
-  //Metadata.Connection                    := Conn;
+  Conn.Connected := True;
+  // Metadata.Connection                    := Conn;
 end;
 
 procedure TFrmPrincipal.LstTabelas_SelecionadasClick(Sender: TObject);
 begin
-     if LstTabelas_Selecionadas.ItemIndex <> -1 then
-     begin
-          Query.SQL.Text := ' SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$RELATION_NAME = ''' + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] + ''' ORDER BY RDB$FIELD_POSITION';
-          Query.Open;
+  if LstTabelas_Selecionadas.ItemIndex <> -1 then
+  begin
+    Query.SQL.Text :=
+      ' SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$RELATION_NAME = '''
+      + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] +
+      ''' ORDER BY RDB$FIELD_POSITION';
+    Query.Open;
 
-          LstCampos.Clear;
+    LstCampos.Clear;
 
-          while not Query.Eof do
-          begin
-               LstCampos.Items.Add( Trim( Query.FieldByName( 'RDB$FIELD_NAME' ).AsString ) );
+    while not Query.Eof do
+    begin
+      LstCampos.Items.Add(Trim(Query.FieldByName('RDB$FIELD_NAME').AsString));
 
-               Query.Next;
-          end;
+      Query.Next;
+    end;
 
-          Query.Close;
+    Query.Close;
 
-          LbCampos.Caption := 'Campos - ' + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex];
-     end
-     else
-     begin
-          LbCampos.Caption := 'Campos';
-     end;
+    LbCampos.Caption := 'Campos - ' + LstTabelas_Selecionadas.Items
+      [LstTabelas_Selecionadas.ItemIndex];
+  end
+  else
+  begin
+    LbCampos.Caption := 'Campos';
+  end;
 
-     PCCondicao_OrdemChange( PCCondicao_Ordem );
+  PCCondicao_OrdemChange(PCCondicao_Ordem);
 end;
 
 procedure TFrmPrincipal.Button4Click(Sender: TObject);
 begin
-     if not Verifica_View then
-     begin
-          MessageDlg( 'Uma view sÛ pode ser selecionada sozinha', MtInformation, [mbok], 0 );
-          Exit;
-     end;
+  if not Verifica_View then
+  begin
+    MessageDlg('Uma view s√≥ pode ser selecionada sozinha', MtInformation,
+      [mbok], 0);
+    Exit;
+  end;
 
-     if LstTabelas_Selecionadas.Items.IndexOf( CmbTabelas.Items[CmbTabelas.ItemIndex] ) = -1 then
-     begin
-          LstTabelas_Selecionadas.Items.Add( CmbTabelas.Items[CmbTabelas.ItemIndex] );
-     end;
+  if LstTabelas_Selecionadas.Items.IndexOf
+    (CmbTabelas.Items[CmbTabelas.ItemIndex]) = -1 then
+  begin
+    LstTabelas_Selecionadas.Items.Add(CmbTabelas.Items[CmbTabelas.ItemIndex]);
+  end;
 end;
 
 procedure TFrmPrincipal.Button5Click(Sender: TObject);
 begin
-     LstTabelas_Selecionadas.DeleteSelected;
+  LstTabelas_Selecionadas.DeleteSelected;
 
-     if LstTabelas_Selecionadas.Items.Count = 0 then
-     begin
-          LbCampos.Caption := 'Campos';
-     end;
+  if LstTabelas_Selecionadas.Items.Count = 0 then
+  begin
+    LbCampos.Caption := 'Campos';
+  end;
 
-     LstCampos.Clear;
+  LstCampos.Clear;
 end;
 
 procedure TFrmPrincipal.Query_Join_FilterRecord(DataSet: TDataSet;
   var Accept: Boolean);
 begin
-     if ( LstTabelas_Selecionadas.ItemIndex <> -1 ) and ( Indice_Filtro <> -1 ) then
-     begin
-          Accept := ( LstTabelas_Selecionadas.Items[Indice_Filtro] = Trim( Query_Join.FieldByName( 'TABELA_RELACIONADA' ).AsString ) );
-     end;
+  if (LstTabelas_Selecionadas.ItemIndex <> -1) and (Indice_Filtro <> -1) then
+  begin
+    Accept := (LstTabelas_Selecionadas.Items[Indice_Filtro]
+      = Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString));
+  end;
 end;
 
 procedure TFrmPrincipal.Button6Click(Sender: TObject);
-var Temp : String;
+var
+  Temp: String;
 begin
-     if ( LstTabelas_Selecionadas.ItemIndex > 0 ) then
-     begin
-          Temp := LstTabelas_Selecionadas.items[ LstTabelas_Selecionadas.ItemIndex ];
-          LstTabelas_Selecionadas.items[ LstTabelas_Selecionadas.ItemIndex] := LstTabelas_Selecionadas.items[ LstTabelas_Selecionadas.ItemIndex - 1];
-          LstTabelas_Selecionadas.items[ LstTabelas_Selecionadas.ItemIndex - 1] := Temp;
+  if (LstTabelas_Selecionadas.ItemIndex > 0) then
+  begin
+    Temp := LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex];
+    LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] :=
+      LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex - 1];
+    LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex -
+      1] := Temp;
 
-          LstTabelas_Selecionadas.ItemIndex := LstTabelas_Selecionadas.ItemIndex -1;
+    LstTabelas_Selecionadas.ItemIndex := LstTabelas_Selecionadas.ItemIndex - 1;
 
-          LstTabelas_SelecionadasClick( LstTabelas_Selecionadas );
-     end;
+    LstTabelas_SelecionadasClick(LstTabelas_Selecionadas);
+  end;
 end;
 
 procedure TFrmPrincipal.BtnGera_SqlClick(Sender: TObject);
@@ -1311,34 +1431,34 @@ end;
 
 procedure TFrmPrincipal.BtnPreparaClick(Sender: TObject);
 begin
-//     if Trim( MemScript.Text ) <> '' then
-//     begin
-//          IBSQL.SQL.Text := MemScript.Text;
-//
-//          Try
-//               IBSQL.Prepare;
-//          except
-//                On E: Exception do
-//                begin
-//                     MemPlan.Clear;
-//                     MemPlan.Text := E.Message;
-//                end;
-//          end;
-//
-//          if IBSQL.Prepared then
-//          begin
-//               MemPlan.lines.Text := IBSQL.Plan;
-//          end;
-//     end
-//     else
-//     begin
-//          MemPlan.lines.Clear;
-//     end;
+  // if Trim( MemScript.Text ) <> '' then
+  // begin
+  // IBSQL.SQL.Text := MemScript.Text;
+  //
+  // Try
+  // IBSQL.Prepare;
+  // except
+  // On E: Exception do
+  // begin
+  // MemPlan.Clear;
+  // MemPlan.Text := E.Message;
+  // end;
+  // end;
+  //
+  // if IBSQL.Prepared then
+  // begin
+  // MemPlan.lines.Text := IBSQL.Plan;
+  // end;
+  // end
+  // else
+  // begin
+  // MemPlan.lines.Clear;
+  // end;
 end;
 
 procedure TFrmPrincipal.SaveConnection;
 begin
-  CDS_CNN.SaveToFile(ExtractFilePath(ParamStr(0))+'Connection.xml', dfXML);
+  CDS_CNN.SaveToFile(ExtractFilePath(ParamStr(0)) + 'Connection.xml', dfXML);
 end;
 
 procedure TFrmPrincipal.SpeedButton2Click(Sender: TObject);

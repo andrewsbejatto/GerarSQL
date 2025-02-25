@@ -1,11 +1,12 @@
-unit Frm_Connection;
+﻿unit Frm_Connection;
 
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
-  Vcl.ExtCtrls, Vcl.DBCtrls, Vcl.Mask, Vcl.Buttons,db,
+  Vcl.ExtCtrls, Vcl.DBCtrls, Vcl.Mask, Vcl.Buttons, db,
   Frm_Principal;
 
 type
@@ -40,7 +41,6 @@ type
     { Public declarations }
   end;
 
-
 var
   FrmConnection: TFrmConnection;
 
@@ -50,36 +50,36 @@ implementation
 
 procedure TFrmConnection.FormDeactivate(Sender: TObject);
 begin
-  //FrmPrincipal.CDS_CNN.Cancel;
+  // FrmPrincipal.CDS_CNN.Cancel;
   Close;
 end;
 
 procedure TFrmConnection.SpeedButton1Click(Sender: TObject);
 begin
   if OD.Execute() then
-  DBEdit3.Text := OD.FileName;
+    DBEdit3.Text := OD.FileName;
 end;
 
 procedure TFrmConnection.btnCancelClick(Sender: TObject);
 begin
-   FrmPrincipal.CDS_CNN.Cancel;
-   Close;
+  FrmPrincipal.CDS_CNN.Cancel;
+  Close;
 end;
 
 procedure TFrmConnection.btnSalvarClick(Sender: TObject);
 begin
-   FrmPrincipal.CDS_CNN.Post;
-   Close;
+  FrmPrincipal.CDS_CNN.Post;
+  Close;
 end;
 
 procedure TFrmConnection.DBComboBox1Change(Sender: TObject);
 begin
-   Label7.Visible := DBComboBox1.ItemIndex in [ DBComboBox1.Items.IndexOf('Firebird'),
-                                                DBComboBox1.Items.IndexOf('MySQL'),
-                                                DBComboBox1.Items.IndexOf('Interbase'),
-                                                DBComboBox1.Items.IndexOf('Oracle'),
-                                                DBComboBox1.Items.IndexOf('PostgreSQL')];
-   DBEdit6.Visible := Label7.Visible;
+  Label7.Visible := DBComboBox1.ItemIndex
+    in [DBComboBox1.Items.IndexOf('Firebird'),
+    DBComboBox1.Items.IndexOf('MySQL'), DBComboBox1.Items.IndexOf('Interbase'),
+    DBComboBox1.Items.IndexOf('Oracle'),
+    DBComboBox1.Items.IndexOf('PostgreSQL')];
+  DBEdit6.Visible := Label7.Visible;
 end;
 
 end.
