@@ -15,31 +15,27 @@ object FrmPrincipal: TFrmPrincipal
   OnCreate = FormCreate
   OnShow = FormShow
   TextHeight = 13
-  object SpeedButton1: TSpeedButton
-    Left = 16
-    Top = 352
-    Width = 23
-    Height = 22
-  end
   object PageControl1: TPageControl
     AlignWithMargins = True
     Left = 3
-    Top = 506
+    Top = 485
     Width = 887
-    Height = 296
+    Height = 317
     Margins.Top = 5
     Margins.Bottom = 0
     ActivePage = TabSheet2
     Align = alClient
     TabOrder = 0
     OnChange = PageControl1Change
+    ExplicitTop = 506
+    ExplicitHeight = 296
     object TabSheet1: TTabSheet
       Caption = 'SQL'
       object MemScript: TMemo
         Left = 0
         Top = 49
         Width = 879
-        Height = 219
+        Height = 240
         Align = alClient
         Font.Charset = ANSI_CHARSET
         Font.Color = clWindowText
@@ -49,6 +45,7 @@ object FrmPrincipal: TFrmPrincipal
         ParentFont = False
         ScrollBars = ssVertical
         TabOrder = 0
+        ExplicitHeight = 219
       end
       object Panel2: TPanel
         Left = 0
@@ -130,7 +127,7 @@ object FrmPrincipal: TFrmPrincipal
         Left = 0
         Top = 0
         Width = 879
-        Height = 268
+        Height = 289
         Align = alClient
         DataSource = DS_Query_Relatorio
         TabOrder = 0
@@ -147,7 +144,7 @@ object FrmPrincipal: TFrmPrincipal
     Left = 3
     Top = 155
     Width = 887
-    Height = 346
+    Height = 325
     Margins.Top = 5
     Margins.Bottom = 0
     Align = alTop
@@ -157,10 +154,10 @@ object FrmPrincipal: TFrmPrincipal
     TabOrder = 1
     DesignSize = (
       883
-      342)
+      321)
     object Label6: TLabel
-      Left = 8
-      Top = 200
+      Left = 9
+      Top = 199
       Width = 205
       Height = 13
       Caption = 'Campos para Filtragem / Ordena'#231#227'o'

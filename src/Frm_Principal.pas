@@ -28,7 +28,6 @@ type
     Panel2: TPanel;
     Lista_Joins: TListBox;
     Panel3: TPanel;
-    SpeedButton1: TSpeedButton;
     BtnGera_Sql: TSpeedButton;
     BtnPrepara: TSpeedButton;
     MemPlan: TMemo;
