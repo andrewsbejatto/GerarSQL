@@ -2,8 +2,9 @@
 
 uses
   Forms,
-  Frm_Principal in 'Frm_Principal.pas' {FrmPrincipal} ,
-  Frm_Connection in 'Frm_Connection.pas' {FrmConnection};
+  Frm_Connection in 'src\Frm_Connection.pas' {FrmConnection},
+  Frm_Principal in 'src\Frm_Principal.pas' {FrmPrincipal},
+  Frm_Fundo in 'src\Frm_Fundo.pas' {FormFundo};
 
 {$R *.res}
 

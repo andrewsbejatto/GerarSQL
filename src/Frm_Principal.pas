@@ -14,7 +14,9 @@ uses
   FireDAC.Phys.FBDef,
   Vcl.DBCtrls, FireDAC.Phys.IBBase, Datasnap.DBClient, FireDAC.Stan.Param,
   FireDAC.DatS,
-  FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet;
+  FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet, Vcl.AppEvnts,
+
+  Frm_Fundo;
 
 type
   TFrmPrincipal = class(TForm)
@@ -103,6 +105,7 @@ type
     Query_Join: TFDQuery;
     Query_Relatorio: TFDQuery;
     FDTransaction: TFDTransaction;
+    ApplicationEvents1: TApplicationEvents;
     procedure FormShow(Sender: TObject);
     procedure BtnAddClick(Sender: TObject);
     procedure BtnAddAllClick(Sender: TObject);
@@ -136,6 +139,9 @@ type
     procedure CDS_CNNAfterPost(DataSet: TDataSet);
     procedure CDS_CNNBeforePost(DataSet: TDataSet);
     procedure CDS_CNNNewRecord(DataSet: TDataSet);
+    procedure ApplicationEvents1ModalBegin(Sender: TObject);
+    procedure ApplicationEvents1ModalEnd(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }
     Indice_Filtro: Integer;
@@ -150,6 +156,7 @@ type
 
 var
   FrmPrincipal: TFrmPrincipal;
+  Fundo: TFormFundo;
 
 implementation
 
@@ -730,9 +737,15 @@ begin
   end;
 end;
 
+procedure TFrmPrincipal.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Fundo.Free;
+end;
+
 procedure TFrmPrincipal.FormCreate(Sender: TObject);
 begin
   FAppPathName := ExtractFilePath(ParamStr(0));
+  Fundo := TFormFundo.CreateNew(Self, True);
 
   // Abre Configurações de Conexão
   LoadConnection;
@@ -852,6 +865,18 @@ begin
   Query.Close;
   CmbCondicao.ItemIndex := 0;
 
+end;
+
+procedure TFrmPrincipal.ApplicationEvents1ModalBegin(Sender: TObject);
+begin
+  if Assigned(Fundo) then
+    Fundo.Exibir(nil, False, EmptyStr, False, False);
+end;
+
+procedure TFrmPrincipal.ApplicationEvents1ModalEnd(Sender: TObject);
+begin
+  if Assigned(Fundo) then
+    Fundo.Fechar;
 end;
 
 procedure TFrmPrincipal.BtnAddAllClick(Sender: TObject);

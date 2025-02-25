@@ -128,11 +128,16 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Frm_Principal.pas">
-            <Form>FrmPrincipal</Form>
-        </DCCReference>
-        <DCCReference Include="Frm_Connection.pas">
+        <DCCReference Include="src\Frm_Connection.pas">
             <Form>FrmConnection</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="src\Frm_Principal.pas">
+            <Form>FrmPrincipal</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="src\Frm_Fundo.pas">
+            <Form>FormFundo</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Base">
@@ -168,7 +173,7 @@
                 <Platform value="Win64">False</Platform>
             </Platforms>
             <Deployment Version="5">
-                <DeployFile LocalName="GerarSQL.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="Win32\Debug\GerarSQL.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>GerarSQL.exe</RemoteName>
                         <Overwrite>true</Overwrite>

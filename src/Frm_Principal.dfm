@@ -11,6 +11,7 @@ object FrmPrincipal: TFrmPrincipal
   Font.Name = 'Verdana'
   Font.Style = []
   Position = poScreenCenter
+  OnClose = FormClose
   OnCreate = FormCreate
   OnShow = FormShow
   TextHeight = 13
@@ -991,5 +992,11 @@ object FrmPrincipal: TFrmPrincipal
     Connection = Cxo
     Left = 764
     Top = 278
+  end
+  object ApplicationEvents1: TApplicationEvents
+    OnModalBegin = ApplicationEvents1ModalBegin
+    OnModalEnd = ApplicationEvents1ModalEnd
+    Left = 440
+    Top = 408
   end
 end
