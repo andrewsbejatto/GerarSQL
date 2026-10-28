@@ -1,4 +1,4 @@
-unit FirebirdVersao;
+﻿unit FirebirdVersao;
 
 interface
 
