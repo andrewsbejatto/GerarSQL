@@ -843,10 +843,6 @@ object FrmPrincipal: TFrmPrincipal
     Left = 792
     Top = 272
   end
-  object IBSQL_: TIBSQL
-    Left = 280
-    Top = 96
-  end
   object Cxo: TFDConnection
     Params.Strings = (
       'DriverID=FB'
@@ -922,7 +918,6 @@ object FrmPrincipal: TFrmPrincipal
     Top = 270
   end
   object Query_Join: TFDQuery
-    OnFilterRecord = Query_JoinFilterRecord
     Connection = Cxo
     Transaction = FDTransaction
     Left = 592

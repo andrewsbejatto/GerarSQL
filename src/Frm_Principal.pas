@@ -4,8 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, Buttons, ExtCtrls, DB, IBCustomDataSet, IBQuery,
-  IBDatabase, ComCtrls, Grids, DBGrids, IBSQL, FireDAC.UI.Intf,
+  Dialogs, StdCtrls, Buttons, ExtCtrls, DB, ComCtrls, Grids, DBGrids,
+  FireDAC.UI.Intf,
   FireDAC.VCLUI.Login, FireDAC.Stan.Intf, FireDAC.Stan.Option,
   FireDAC.Stan.Error,
   FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
@@ -16,7 +16,7 @@ uses
   FireDAC.DatS,
   FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet, Vcl.AppEvnts,
 
-  Frm_Fundo;
+  Frm_Fundo, FirebirdVersao;
 
 type
   TFrmPrincipal = class(TForm)
@@ -72,7 +72,6 @@ type
     Button5: TButton;
     Button6: TButton;
     DS_Query_Relatorio: TDataSource;
-    IBSQL_: TIBSQL;
     Cxo: TFDConnection;
     pnCONN: TPanel;
     Panel9: TPanel;
@@ -136,11 +135,14 @@ type
     procedure ApplicationEvents1ModalEnd(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure CxoAfterConnect(Sender: TObject);
-    procedure Query_JoinFilterRecord(DataSet: TDataSet; var Accept: Boolean);
   private
     { Private declarations }
-    Indice_Filtro: Integer;
     FAppPathName: String;
+    FVersao: TFirebirdVersao;
+    procedure Gera_Joins;
+    function E_View(const ATabela: String): Boolean;
+    function Tabela_Selecionada(const ATabela: String): Boolean;
+    function Novo_Apelido(const ATabela: String): String;
     procedure Conectar(Driver: String; Conn: TFDConnection;
       Server, Database, User, Pass: String; Port: Integer = 0);
   public
@@ -157,28 +159,270 @@ implementation
 
 uses
   CodeSiteLogging,
+  System.Generics.Collections,
   Vcl.Clipbrd,
   Frm_Connection,
   Log;
 
 {$R *.dfm}
 
+// Os itens de LstTabelas_Selecionadas são "TABELA" ou, quando a mesma tabela
+// é adicionada mais de uma vez, "TABELA APELIDO" (que já é a sintaxe do FROM/JOIN)
+function Nome_Tabela(const AItem: String): String;
+begin
+  if Pos(' ', AItem) > 0 then
+    Result := Copy(AItem, 1, Pos(' ', AItem) - 1)
+  else
+    Result := AItem;
+end;
+
+// Nome usado para referenciar a tabela nos campos (TABELA.CAMPO ou APELIDO.CAMPO)
+function Apelido_Tabela(const AItem: String): String;
+begin
+  if Pos(' ', AItem) > 0 then
+    Result := Copy(AItem, Pos(' ', AItem) + 1, Length(AItem))
+  else
+    Result := AItem;
+end;
+
+type
+  // Chave estrangeira entre duas tabelas selecionadas
+  TRelacao = record
+    Constraint: String;
+    Mestre: String;
+    Detalhe: String;
+    Campos_Mestre: TArray<String>;
+    Campos_Detalhe: TArray<String>;
+    Nulo: Boolean;
+  end;
+
+procedure TFrmPrincipal.Gera_Joins;
+const
+  // Campos de cada chave estrangeira, com a tabela/campo referenciados e se aceitam nulo
+  // (NOT NULL pode estar no campo ou no domínio). Sem TRIM/COALESCE para funcionar no Firebird 1.x
+  SQL_RELACOES = '''
+    SELECT
+      RC.RDB$CONSTRAINT_NAME NOME_CONSTRAINT,
+      RC.RDB$RELATION_NAME TABELA,
+      ISEG.RDB$FIELD_NAME CAMPO,
+      REF.RDB$RELATION_NAME TABELA_RELACIONADA,
+      REFSEG.RDB$FIELD_NAME CAMPO_RELACIONADO,
+      RF.RDB$NULL_FLAG NULO_CAMPO,
+      F.RDB$NULL_FLAG NULO_DOMINIO,
+      RFR.RDB$NULL_FLAG NULO_CAMPO_RELACIONADO,
+      FR.RDB$NULL_FLAG NULO_DOMINIO_RELACIONADO
+    FROM RDB$RELATION_CONSTRAINTS RC
+      INNER JOIN RDB$INDICES IDX ON IDX.RDB$INDEX_NAME = RC.RDB$INDEX_NAME
+      INNER JOIN RDB$INDEX_SEGMENTS ISEG ON ISEG.RDB$INDEX_NAME = IDX.RDB$INDEX_NAME
+      INNER JOIN RDB$INDICES REF ON REF.RDB$INDEX_NAME = IDX.RDB$FOREIGN_KEY
+      INNER JOIN RDB$INDEX_SEGMENTS REFSEG ON REFSEG.RDB$INDEX_NAME = REF.RDB$INDEX_NAME
+        AND REFSEG.RDB$FIELD_POSITION = ISEG.RDB$FIELD_POSITION
+      LEFT JOIN RDB$RELATION_FIELDS RF ON RF.RDB$RELATION_NAME = RC.RDB$RELATION_NAME
+        AND RF.RDB$FIELD_NAME = ISEG.RDB$FIELD_NAME
+      LEFT JOIN RDB$FIELDS F ON F.RDB$FIELD_NAME = RF.RDB$FIELD_SOURCE
+      LEFT JOIN RDB$RELATION_FIELDS RFR ON RFR.RDB$RELATION_NAME = REF.RDB$RELATION_NAME
+        AND RFR.RDB$FIELD_NAME = REFSEG.RDB$FIELD_NAME
+      LEFT JOIN RDB$FIELDS FR ON FR.RDB$FIELD_NAME = RFR.RDB$FIELD_SOURCE
+    WHERE RC.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
+    ORDER BY RC.RDB$CONSTRAINT_NAME, ISEG.RDB$FIELD_POSITION
+    ''';
+var
+  i: Integer;
+  Relacoes: TList<TRelacao>;
+  Relacao: TRelacao;
+  Nomes, Usadas, Pendentes, FKs_Usadas: TStringList;
+  Constraint, Tabela, Tabela_Relacionada: String;
+  Nulo: Boolean;
+  Indice_Relacao, Indice_Pendente: Integer;
+  Mestre, Detalhe: String;
+  Paragrafo, Inner_Ou_Left, Linha: String;
+
+  // Quantidade de chaves estrangeiras entre as duas tabelas
+  function Quantidade_FKs(const AMestre, ADetalhe: String): Integer;
+  begin
+    Result := 0;
+    for var r := 0 to Relacoes.Count - 1 do
+      if (Relacoes[r].Mestre = AMestre) and (Relacoes[r].Detalhe = ADetalhe) then
+        Inc(Result);
+  end;
+
+  function Monta_Condicao(const ARelacao: TRelacao; const AApelido_Mestre, AApelido_Detalhe: String): String;
+  begin
+    Result := '';
+    for var c := 0 to High(ARelacao.Campos_Mestre) do
+    begin
+      if Result <> '' then
+        Result := Result + ' AND ';
+      Result := Result + AApelido_Mestre + '.' + ARelacao.Campos_Mestre[c] + ' = ' +
+        AApelido_Detalhe + '.' + ARelacao.Campos_Detalhe[c];
+    end;
+  end;
+
+  // Procura uma chave estrangeira ainda não usada entre a tabela pendente e alguma tabela
+  // que já está no FROM/JOIN, dando preferência à última adicionada. Cada chave estrangeira
+  // de uma ocorrência da tabela detalhe liga uma única vez: quando a tabela mestre é
+  // repetida (com apelido), cada ocorrência usa a próxima chave estrangeira
+  function Acha_Relacao(const APendente: String; out AMestre, ADetalhe: String): Integer;
+  begin
+    for var u := Usadas.Count - 1 downto 0 do
+      for var r := 0 to Relacoes.Count - 1 do
+        for var Pendente_E_Mestre := 0 to 1 do
+        begin
+          if Pendente_E_Mestre = 0 then
+          begin
+            AMestre := APendente;
+            ADetalhe := Usadas[u];
+          end
+          else
+          begin
+            AMestre := Usadas[u];
+            ADetalhe := APendente;
+          end;
+
+          if (Relacoes[r].Mestre = Nome_Tabela(AMestre)) and
+             (Relacoes[r].Detalhe = Nome_Tabela(ADetalhe)) and
+             (FKs_Usadas.IndexOf(Relacoes[r].Constraint + '|' + Apelido_Tabela(ADetalhe)) = -1) then
+            Exit(r);
+        end;
+    Result := -1;
+  end;
+
+begin
+  Relacoes := TList<TRelacao>.Create;
+  Nomes := TStringList.Create;
+  Usadas := TStringList.Create;
+  Pendentes := TStringList.Create;
+  FKs_Usadas := TStringList.Create;
+  try
+    for i := 0 to LstTabelas_Selecionadas.Count - 1 do
+      Nomes.Add(Nome_Tabela(LstTabelas_Selecionadas.Items[i]));
+
+    // Carregando as chaves estrangeiras entre as tabelas selecionadas
+    Query_Join.SQL.Text := SQL_RELACOES;
+    CodeSite.Send('Query_Join', Query_Join.SQL.Text);
+    Query_Join.Open;
+    try
+      Constraint := '';
+      while not Query_Join.Eof do
+      begin
+        Tabela := Trim(Query_Join.FieldByName('TABELA').AsString);
+        Tabela_Relacionada := Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString);
+
+        // Só interessam ligações entre tabelas selecionadas. O auto-relacionamento
+        // só é usado quando a tabela é adicionada mais de uma vez (com apelido)
+        if (Nomes.IndexOf(Tabela) <> -1) and (Nomes.IndexOf(Tabela_Relacionada) <> -1) then
+        begin
+          // Se um dos campos da ligação admite nulo a ligação será LEFT JOIN
+          Nulo :=
+            ((Query_Join.FieldByName('NULO_CAMPO').AsInteger <> 1) and
+             (Query_Join.FieldByName('NULO_DOMINIO').AsInteger <> 1)) or
+            ((Query_Join.FieldByName('NULO_CAMPO_RELACIONADO').AsInteger <> 1) and
+             (Query_Join.FieldByName('NULO_DOMINIO_RELACIONADO').AsInteger <> 1));
+
+          if Trim(Query_Join.FieldByName('NOME_CONSTRAINT').AsString) <> Constraint then
+          begin
+            Constraint := Trim(Query_Join.FieldByName('NOME_CONSTRAINT').AsString);
+
+            Relacao.Constraint := Constraint;
+            Relacao.Mestre := Tabela_Relacionada;
+            Relacao.Detalhe := Tabela;
+            Relacao.Campos_Mestre := [Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString)];
+            Relacao.Campos_Detalhe := [Trim(Query_Join.FieldByName('CAMPO').AsString)];
+            Relacao.Nulo := Nulo;
+            Relacoes.Add(Relacao);
+          end
+          else
+          begin
+            // Demais campos de uma chave composta
+            Relacao := Relacoes.Last;
+            Relacao.Campos_Mestre := Relacao.Campos_Mestre +
+              [Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString)];
+            Relacao.Campos_Detalhe := Relacao.Campos_Detalhe +
+              [Trim(Query_Join.FieldByName('CAMPO').AsString)];
+            Relacao.Nulo := Relacao.Nulo or Nulo;
+            Relacoes[Relacoes.Count - 1] := Relacao;
+          end;
+        end;
+
+        Query_Join.Next;
+      end;
+    finally
+      Query_Join.Close;
+    end;
+
+    // A primeira tabela selecionada é sempre a do FROM
+    Usadas.Add(LstTabelas_Selecionadas.Items[0]);
+    MemScript.Lines.Add('FROM ' + LstTabelas_Selecionadas.Items[0]);
+
+    for i := 1 to LstTabelas_Selecionadas.Count - 1 do
+      Pendentes.Add(LstTabelas_Selecionadas.Items[i]);
+
+    Paragrafo := '';
+
+    // Cada tabela (ou ocorrência com apelido) entra uma única vez, ligada a uma tabela já adicionada
+    while Pendentes.Count > 0 do
+    begin
+      Paragrafo := Paragrafo + '      ';
+
+      Indice_Relacao := -1;
+      Indice_Pendente := -1;
+      for i := 0 to Pendentes.Count - 1 do
+      begin
+        Indice_Relacao := Acha_Relacao(Pendentes[i], Mestre, Detalhe);
+        if Indice_Relacao <> -1 then
+        begin
+          Indice_Pendente := i;
+          Break;
+        end;
+      end;
+
+      if Indice_Pendente <> -1 then
+      begin
+        Relacao := Relacoes[Indice_Relacao];
+        FKs_Usadas.Add(Relacao.Constraint + '|' + Apelido_Tabela(Detalhe));
+
+        if Relacao.Nulo then
+          Inner_Ou_Left := 'LEFT JOIN '
+        else
+          Inner_Ou_Left := 'INNER JOIN ';
+
+        Linha := Paragrafo + Inner_Ou_Left + Pendentes[Indice_Pendente] + ' ON ' +
+          Monta_Condicao(Relacao, Apelido_Tabela(Mestre), Apelido_Tabela(Detalhe));
+
+        // Havendo mais de uma chave estrangeira entre as tabelas, indica qual foi usada
+        if Quantidade_FKs(Relacao.Mestre, Relacao.Detalhe) > 1 then
+          Linha := Linha + ' /* ' + Relacao.Constraint + ' */';
+
+        MemScript.Lines.Add(Linha);
+      end
+      else
+      begin
+        // Nenhuma tabela restante tem chave estrangeira (ainda não usada) com as já adicionadas
+        Indice_Pendente := 0;
+        TLog.Error('Tabela sem relacionamento com as demais: ' + Pendentes[0]);
+        MemScript.Lines.Add(Paragrafo + FVersao.JoinSemRelacao(Pendentes[0]) +
+          ' /* sem chave estrangeira com as demais tabelas */');
+      end;
+
+      Usadas.Add(Pendentes[Indice_Pendente]);
+      Pendentes.Delete(Indice_Pendente);
+    end;
+  finally
+    FKs_Usadas.Free;
+    Pendentes.Free;
+    Usadas.Free;
+    Nomes.Free;
+    Relacoes.Free;
+  end;
+end;
+
 procedure TFrmPrincipal.Gera_Script;
 var
-  i, j, k: Integer;
-  Lst_Temp: TStringList;
-  Constraint: String;
-  Script_Temp, Nome_Tabela_Relacionada: String;
-  Paragrafo: String;
-  Achou, From_Used: Boolean;
-  Tabela_Selecionada: String;
-  Inner_Ou_Left: String;
+  i: Integer;
   Where: String;
   Operacao: String;
   Prefixo, Sulfixo: String;
-  First: String;
-  Tabelas_Selecionadas: String;
-  Linha_Temp: String;
+  Quantidade: String;
 
   // Acha a posição do campo para o order by
   function Acha_Indice(Campo: String): String;
@@ -193,18 +437,15 @@ var
 begin
   MemScript.Clear;
 
+  // Quantidade de registros (FIRST / ROWS / FETCH FIRST conforme a versão do banco)
+  if not ChkTodos.Checked then
+    Quantidade := Trim(EdtFirst.Text)
+  else
+    Quantidade := '';
+
   if (LstTabelas_Selecionadas.Count > 0) then
   begin
-    Lst_Temp := TStringList.Create;
-    Lista_Joins.Clear;
-
-    // Adicionando os n Primeiros
-    if not ChkTodos.Checked then
-      First := 'FIRST ' + EdtFirst.Text
-    else
-      First := '';
-
-    MemScript.Lines.Add('SELECT ' + First);
+    MemScript.Lines.Add(TrimRight('SELECT ' + FVersao.LimiteInicio(Quantidade)));
 
     // Selecionando os campos a serem exibidos
     if LstCampos_Selecionados.Items.Count + LstCampos_Agregados.Items.Count > 0
@@ -240,276 +481,7 @@ begin
     if LstTabelas_Selecionadas.Items.Count = 1 then
       MemScript.Lines.Add('FROM ' + LstTabelas_Selecionadas.Items[0])
     else
-    begin
-      Script_Temp := '';
-      Inner_Ou_Left := '';
-
-      // Selecionando as constraints (a tabela é filtrada no evento OnFilterRecord)
-      var LSqlConstraints := '''
-        SELECT
-          RRC.RDB$CONSTRAINT_NAME NOME_CONSTRAINT, RRC.RDB$INDEX_NAME, RRC.RDB$RELATION_NAME, RIS.RDB$FIELD_NAME CAMPO, RIS.RDB$FIELD_POSITION,
-          (SELECT RI2.RDB$RELATION_NAME FROM RDB$INDICES RI2 WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY ) TABELA_RELACIONADA,
-          (SELECT RIS2.RDB$FIELD_NAME FROM RDB$INDEX_SEGMENTS RIS2 INNER JOIN RDB$INDICES RI2 ON RIS2.RDB$INDEX_NAME = RI2.RDB$INDEX_NAME
-           WHERE RI2.RDB$INDEX_NAME = RI.RDB$FOREIGN_KEY AND RIS2.RDB$FIELD_POSITION = RIS.RDB$FIELD_POSITION ) CAMPO_RELACIONADO
-        FROM RDB$RELATION_CONSTRAINTS RRC
-          INNER JOIN RDB$INDEX_SEGMENTS RIS ON RIS.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME
-          INNER JOIN RDB$INDICES RI ON RI.RDB$INDEX_NAME = RRC.RDB$INDEX_NAME
-        WHERE RRC.RDB$CONSTRAINT_TYPE = 'FOREIGN KEY'
-        ORDER BY 6, RRC.RDB$CONSTRAINT_NAME, RIS.RDB$FIELD_POSITION
-        ''';
-      Query_Join.SQL.Text := LSqlConstraints;
-      CodeSite.Send('Query_Join', Query_Join.SQL.Text);
-      Query_Join.Open;
-
-      For i := 0 to Pred(LstTabelas_Selecionadas.Items.Count) do
-      begin
-        Query_Join.First;
-        LstTabelas_Selecionadas.ItemIndex := i;
-
-        // Armazenando o índice para o filtro no OnFilterRecord
-        Indice_Filtro := i;
-
-        Nome_Tabela_Relacionada := '';
-
-        // Armazenando o nome da constraint para verificar a mudança de join
-        Constraint := Query_Join.FieldByName('NOME_CONSTRAINT').AsString;
-
-        while not Query_Join.Eof do
-        begin
-          // Verificando se a tabela Relacionada está no rol das tabelas Selecionadas, se estiver então...
-          if LstTabelas_Selecionadas.Items.IndexOf(Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString)) <> -1 then
-          begin
-            // Verificando se um dos campos admite nulo
-            var LSqlCampoNulo := '''
-              SELECT
-                *
-              FROM RDB$RELATION_FIELDS, RDB$FIELDS
-              WHERE
-                RDB$FIELDS.RDB$FIELD_NAME = RDB$RELATION_FIELDS.RDB$FIELD_SOURCE AND
-                RDB$RELATION_FIELDS.RDB$RELATION_NAME = %s AND
-                RDB$RELATION_FIELDS.RDB$FIELD_NAME = %s
-              ''';
-
-            // Verificando o 1º Campo
-            Query2.SQL.Text := Format(LSqlCampoNulo,
-              [QuotedStr(Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString)),
-               QuotedStr(Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString))]);
-            CodeSite.Send('Query2', Query2.SQL.Text);
-            Query2.Open;
-
-            if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') then
-            begin
-              // armazenando o tipo de ligação
-              Inner_Ou_Left := 'LEFT JOIN';
-            end else
-            begin
-
-              // Verificando o 2º Campo
-              Query2.SQL.Text := Format(LSqlCampoNulo,
-                [QuotedStr(Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString)),
-                 QuotedStr(Trim(Query_Join.FieldByName('CAMPO').AsString))]);
-              CodeSite.Send('Query2', Query2.SQL.Text);
-              Query2.Open;
-
-              if (Query2.FieldByName('RDB$NULL_FLAG').AsString = '') then
-                Inner_Ou_Left := 'LEFT JOIN'
-              else
-              begin
-                if (Inner_Ou_Left = '') then
-                begin
-                  Inner_Ou_Left := 'INNER JOIN';
-                end;
-              end;
-            end;
-            Query2.Close;
-
-            // Verifica se a Tabela Relacionada está listagem de tabelas selecionadas
-            if LstTabelas_Selecionadas.Items.IndexOf(Query_Join.FieldByName('TABELA_RELACIONADA').AsString) < 0 then
-            begin
-              Query_Join.Next;
-              Continue;
-            end;
-
-            // Se for o primeiro campo de uma chave composta então armazene na variável...
-            if (Query_Join.FieldByName('RDB$FIELD_POSITION').AsInteger = 0) then
-            begin
-              // é adicionado o nome "TABELA" para podermos adicionar mais tarde o nome da tabela
-              // O caracter "|" é para marcar a posição da relação INNER ou LEFT
-              Script_Temp :=
-                ' |TABELA ON ' + LstTabelas_Selecionadas.Items[i] + '.' +
-                Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) + ' = ' +
-                Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString) + '.' +
-                Trim(Query_Join.FieldByName('CAMPO').AsString);
-            end
-            else
-            // Se não for o primeiro campo de uma chave composta então adicione o resto do join...
-            begin
-              Script_Temp :=
-                Script_Temp + ' AND ' +
-                LstTabelas_Selecionadas.Items[i] + '.' +
-                Trim(Query_Join.FieldByName('CAMPO_RELACIONADO').AsString) + ' = ' +
-                Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString) + '.' +
-                Trim(Query_Join.FieldByName('CAMPO').AsString);
-            end;
-
-            // Esta variável será adicionada na frente do JOIN indicando as tabelas que participam da
-            // ligação
-            Tabelas_Selecionadas := LstTabelas_Selecionadas.Items[i] + '/' +
-              Trim(Query_Join.FieldByName('RDB$RELATION_NAME').AsString);
-          end;
-
-          Query_Join.Next;
-
-          // Se esta constraint já foi processada, então vou adicionar numa lista
-          if (Constraint <> Query_Join.FieldByName('NOME_CONSTRAINT').AsString) or Query_Join.Eof then
-          begin
-            if Script_Temp <> '' then
-            begin
-              // Substituindo | por INNER JOIN ou LEFT JOIN
-              while Pos('|', Script_Temp) > 0 do
-              begin
-                Script_Temp := Copy(Script_Temp, 1, Pos('|', Script_Temp) - 1) +
-                  Inner_Ou_Left + Copy(Script_Temp, Pos('|', Script_Temp) + 1,
-                  Length(Script_Temp));
-              end;
-
-              // Adicionando a ligação na lista. Primeiro coloco os caracteres de controle das tabelas e depois o JOIN propriamente dito
-              Lista_Joins.Items.Add(Tabelas_Selecionadas + ':' + Script_Temp);
-
-              Script_Temp := '';
-
-              Inner_Ou_Left := '';
-            end;
-
-            // Atualizando no nome da constraint
-            Constraint := Query_Join.FieldByName('NOME_CONSTRAINT').AsString;
-          end;
-        end;
-      end;
-      Query_Join.Close;
-
-      Paragrafo := '';
-
-      From_Used := False;
-
-      // Criando o join
-      For j := 0 to LstTabelas_Selecionadas.Count - 2 do
-      begin
-        // Inicializando variável de controle
-        Achou := False;
-
-        For i := 0 to Lista_Joins.Count - 1 do
-        begin
-          // Inicialmente a relação é feita entre tabelas sequenciais. A 1º com a 2º, a 2º com a 3º ...
-          // Subentende-se que o usuário adicionou as tabelas de forma que a tabela dependente foi
-          // selecionada após a tabela principal
-          if (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i]) - 1)
-            = LstTabelas_Selecionadas.Items[j] + '/' +
-            LstTabelas_Selecionadas.Items[j + 1]) or
-            (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i]) - 1)
-            = LstTabelas_Selecionadas.Items[j + 1] + '/' +
-            LstTabelas_Selecionadas.Items[j]) then
-          begin
-            // O primeiro Join sempre vai ter o FROM desde que não haja duas constraints apontando para a mesma tabela
-            if (j = 0) and not From_Used then
-            begin
-              // Formatando o join, tirando os caracteres de controle
-              Lista_Joins.Items[i] := Copy(Lista_Joins.Items[i], 1,
-                Pos('TABELA', Lista_Joins.Items[i]) - 1) + ' ' +
-                LstTabelas_Selecionadas.Items[j + 1] + ' ' +
-                Copy(Lista_Joins.Items[i], Pos('TABELA', Lista_Joins.Items[i]) +
-                7, Length(Lista_Joins.Items[i]));
-              Linha_Temp := 'FROM ' + LstTabelas_Selecionadas.Items[j] + sLineBreak +
-                Copy(Lista_Joins.Items[i], Pos(':', Lista_Joins.Items[i]) + 1,
-                Length(Lista_Joins.Items[i]));
-
-              From_Used := True;
-            end
-            else
-            begin
-              // Formatando o join, tirando os caracteres de controle
-              Lista_Joins.Items[i] := Copy(Lista_Joins.Items[i], 1,
-                Pos('TABELA', Lista_Joins.Items[i]) - 1) + ' ' +
-                LstTabelas_Selecionadas.Items[j + 1] + ' ' +
-                Copy(Lista_Joins.Items[i], Pos('TABELA', Lista_Joins.Items[i]) +
-                7, Length(Lista_Joins.Items[i]));
-              Linha_Temp := Copy(Lista_Joins.Items[i],
-                Pos(':', Lista_Joins.Items[i]) + 2,
-                Length(Lista_Joins.Items[i]));
-            end;
-
-            // Adicionando o nome das tabelas que já participaram, "dando oportunidade"
-            // para as outras tabelas serem mencionadas nos próximos joins
-            Lst_Temp.Add(LstTabelas_Selecionadas.Items[j]);
-            Lst_Temp.Add(LstTabelas_Selecionadas.Items[j + 1]);
-
-            // Adicionando JOIN ao script com parágrafo
-            MemScript.Lines.Add(Paragrafo + Linha_Temp);
-
-            // Aumentando o parágrafo
-            Paragrafo := Paragrafo + '      ';
-
-            // Existe uma relação entre as tabelas sequencialmente
-            Achou := True;
-          end;
-        end;
-
-        // Não foi encontrada relação entre tabelas paralelas, então vamos varrer a lista de tabelas
-        // Até encontrar a tabela que está relacionada
-        if not Achou then
-        begin
-          For k := 0 to LstTabelas_Selecionadas.Count - 1 do
-          begin
-            // Não pode ser a mesma tabela usada anteriormente
-            if k <> j + 1 then
-            begin
-              For i := 0 to Lista_Joins.Count - 1 do
-              begin
-                // Verifica se existe a relação
-                if (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i])
-                  - 1) = LstTabelas_Selecionadas.Items[j + 1] + '/' +
-                  LstTabelas_Selecionadas.Items[k]) or
-                  (Copy(Lista_Joins.Items[i], 1, Pos(':', Lista_Joins.Items[i])
-                  - 1) = LstTabelas_Selecionadas.Items[k] + '/' +
-                  LstTabelas_Selecionadas.Items[j + 1]) then
-                begin
-                  // Verifica se a tabela já foi adicionada em alguma relação
-                  if (Lst_Temp.IndexOf(LstTabelas_Selecionadas.Items[j + 1]) <>
-                    -1) or (Lst_Temp.IndexOf(LstTabelas_Selecionadas.Items[k])
-                    <> -1) then
-                  begin
-                    // Pegando o nome da tabela apropriada para o join
-                    if Lst_Temp.IndexOf(LstTabelas_Selecionadas.Items[j + 1]
-                      ) = -1 then
-                      Tabela_Selecionada := LstTabelas_Selecionadas.Items[j + 1]
-                    else
-                      Tabela_Selecionada := LstTabelas_Selecionadas.Items[k];
-
-                    // Formatando o join, tirando os caracteres de controle
-                    Lista_Joins.Items[i] := Copy(Lista_Joins.Items[i], 1,
-                      Pos('TABELA', Lista_Joins.Items[i]) - 1) + ' ' +
-                      Tabela_Selecionada + ' ' + Copy(Lista_Joins.Items[i],
-                      Pos('TABELA', Lista_Joins.Items[i]) + 7,
-                      Length(Lista_Joins.Items[i]));
-                    Linha_Temp := Copy(Lista_Joins.Items[i],
-                      Pos(':', Lista_Joins.Items[i]) + 2,
-                      Length(Lista_Joins.Items[i]));
-
-                    // adicionando JOIN ao script com parágrafo
-                    MemScript.Lines.Add(Paragrafo + Linha_Temp);
-
-                    // Aumentando o parágrafo
-                    Paragrafo := Paragrafo + '      ';
-                  end;
-                end;
-              end;
-            end;
-          end;
-        end;
-      end;
-
-      Lst_Temp.Free;
-    end;
+      Gera_Joins;
   end;
 
   // Selecionando o filtro "WHERE"
@@ -673,25 +645,30 @@ begin
           Pos('[Decrescente]', LstOrdem.Items[i]) - 2)) + ' DESC' + Sulfixo);
     end;
   end;
+
+  // Limite de registros no final do comando (Firebird 2.0 ou superior)
+  if (LstTabelas_Selecionadas.Count > 0) and (FVersao.LimiteFim(Quantidade) <> '') then
+    MemScript.Lines.Add(FVersao.LimiteFim(Quantidade));
+end;
+
+function TFrmPrincipal.E_View(const ATabela: String): Boolean;
+begin
+  Query.SQL.Text :=
+    'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ' + QuotedStr(ATabela);
+  Query.Open;
+
+  Result := not Query.IsEmpty;
+
+  Query.Close;
 end;
 
 function TFrmPrincipal.eh_view: Boolean;
 begin
-  Result := False;
-
-  if LstTabelas_Selecionadas.Count = 1 then
-  begin
-    Query.SQL.Text :=
-      'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' +
-      LstTabelas_Selecionadas.Items[0] + '''';
-    Query.Open;
-
-    Result := not Query.IsEmpty;
-
-    Query.Close;
-  end;
+  Result := (LstTabelas_Selecionadas.Count = 1) and
+    E_View(Nome_Tabela(LstTabelas_Selecionadas.Items[0]));
 end;
 
+// Uma view só pode ser selecionada sozinha (nem repetida com apelido)
 function TFrmPrincipal.Verifica_View: Boolean;
 var
   i: Integer;
@@ -702,39 +679,49 @@ begin
   begin
     For i := 0 to LstTabelas_Selecionadas.Items.Count - 1 do
     begin
-      if LstTabelas_Selecionadas.Items[i] <> CmbTabelas.Items
-        [CmbTabelas.ItemIndex] then
-      begin
-        Query.SQL.Text :=
-          'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' +
-          LstTabelas_Selecionadas.Items[i] + '''';
-        Query.Open;
-
-        if not Query.IsEmpty then
-        begin
-          Result := False;
-        end;
-
-        Query.Close;
-      end;
+      if E_View(Nome_Tabela(LstTabelas_Selecionadas.Items[i])) then
+        Exit(False);
     end;
 
-    if Result then
-    begin
-      if LstTabelas_Selecionadas.Items.IndexOf
-        (CmbTabelas.Items[CmbTabelas.ItemIndex]) = -1 then
-      begin
-        Query.SQL.Text :=
-          'SELECT * FROM RDB$VIEW_RELATIONS WHERE RDB$VIEW_NAME = ''' +
-          CmbTabelas.Items[CmbTabelas.ItemIndex] + '''';
-        Query.Open;
-
-        Result := Query.IsEmpty;
-
-        Query.Close;
-      end;
-    end;
+    Result := not E_View(CmbTabelas.Items[CmbTabelas.ItemIndex]);
   end;
+end;
+
+function TFrmPrincipal.Tabela_Selecionada(const ATabela: String): Boolean;
+begin
+  Result := False;
+  for var i := 0 to LstTabelas_Selecionadas.Count - 1 do
+    if Nome_Tabela(LstTabelas_Selecionadas.Items[i]) = ATabela then
+      Exit(True);
+end;
+
+// Apelido para a tabela adicionada novamente: TABELA_2, TABELA_3...
+// respeitando o tamanho máximo de identificadores da versão do banco
+function TFrmPrincipal.Novo_Apelido(const ATabela: String): String;
+var
+  Tamanho_Maximo, Sequencia: Integer;
+  Sulfixo: String;
+
+  function Apelido_Em_Uso(const AApelido: String): Boolean;
+  begin
+    Result := CmbTabelas.Items.IndexOf(AApelido) <> -1;
+    for var i := 0 to LstTabelas_Selecionadas.Count - 1 do
+      if Apelido_Tabela(LstTabelas_Selecionadas.Items[i]) = AApelido then
+        Exit(True);
+  end;
+
+begin
+  if FVersao.Versao >= 40 then
+    Tamanho_Maximo := 63
+  else
+    Tamanho_Maximo := 31;
+
+  Sequencia := 1;
+  repeat
+    Inc(Sequencia);
+    Sulfixo := '_' + IntToStr(Sequencia);
+    Result := Copy(ATabela, 1, Tamanho_Maximo - Length(Sulfixo)) + Sulfixo;
+  until not Apelido_Em_Uso(Result);
 end;
 
 procedure TFrmPrincipal.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -776,11 +763,11 @@ begin
       if LstTabelas_Selecionadas.ItemIndex <> -1 then
       begin
         if LstCampos_Selecionados.Items.IndexOf
-          (LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] +
+          (Apelido_Tabela(LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex]) +
           '.' + LstCampos.Items[LstCampos.ItemIndex]) = -1 then
         begin
-          LstCampos_Selecionados.Items.Add(LstTabelas_Selecionadas.Items
-            [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items
+          LstCampos_Selecionados.Items.Add(Apelido_Tabela(LstTabelas_Selecionadas.Items
+            [LstTabelas_Selecionadas.ItemIndex]) + '.' + LstCampos.Items
             [LstCampos.ItemIndex]);
         end;
 
@@ -822,8 +809,8 @@ begin
 
         if LstTabelas_Selecionadas.ItemIndex <> -1 then
         begin
-          LstCampos_Agregados.Items.Add(Funcao + LstTabelas_Selecionadas.Items
-            [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items
+          LstCampos_Agregados.Items.Add(Funcao + Apelido_Tabela(LstTabelas_Selecionadas.Items
+            [LstTabelas_Selecionadas.ItemIndex]) + '.' + LstCampos.Items
             [LstCampos.ItemIndex] + ')');
 
           if LstCampos_Agregados.ItemIndex < LstCampos_Agregados.Items.Count - 1
@@ -856,7 +843,11 @@ begin
   if not Cxo.Connected then
     Exit;
 
-  Query.SQL.Text := 'SELECT * FROM RDB$RELATIONS WHERE RDB$SYSTEM_FLAG = 0';
+  // Em bancos antigos o RDB$SYSTEM_FLAG das tabelas do usuário pode ser nulo
+  Query.SQL.Text :=
+    'SELECT RDB$RELATION_NAME FROM RDB$RELATIONS ' +
+    'WHERE (RDB$SYSTEM_FLAG = 0 OR RDB$SYSTEM_FLAG IS NULL) ' +
+    'ORDER BY RDB$RELATION_NAME';
   Query.Open;
   CmbTabelas.Clear;
   while not Query.Eof do
@@ -885,13 +876,19 @@ procedure TFrmPrincipal.BtnAddAllClick(Sender: TObject);
 var
   i: Integer;
 begin
+  if LstTabelas_Selecionadas.ItemIndex = -1 then
+  begin
+    MessageDlg('Selecione a tabela', MtInformation, [mbok], 0);
+    Exit;
+  end;
+
   For i := 0 to LstCampos.Count - 1 do
   begin
-    if LstCampos_Selecionados.Items.IndexOf(LstTabelas_Selecionadas.Items
-      [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[i]) = -1 then
+    if LstCampos_Selecionados.Items.IndexOf(Apelido_Tabela(LstTabelas_Selecionadas.Items
+      [LstTabelas_Selecionadas.ItemIndex]) + '.' + LstCampos.Items[i]) = -1 then
     begin
-      LstCampos_Selecionados.Items.Add(LstTabelas_Selecionadas.Items
-        [LstTabelas_Selecionadas.ItemIndex] + '.' + LstCampos.Items[i]);
+      LstCampos_Selecionados.Items.Add(Apelido_Tabela(LstTabelas_Selecionadas.Items
+        [LstTabelas_Selecionadas.ItemIndex]) + '.' + LstCampos.Items[i]);
     end;
   end;
 end;
@@ -1029,6 +1026,7 @@ procedure TFrmPrincipal.PageControlSQLChange(Sender: TObject);
 var
   i: Integer;
   Parametro: String;
+  Posicao_Plan: Integer;
 begin
   if PageControlSQL.ActivePageIndex = 1 then
   begin
@@ -1037,14 +1035,19 @@ begin
 
     if Trim(MemScript.Text) <> '' then
     begin
-      if not eh_view then
+      if not eh_view and (Trim(MemPlan.Text) <> '') then
       begin
-        if Pos('ORDER BY', MemScript.Text) > 0 then
+        // O PLAN deve vir antes do ORDER BY e do limite (ROWS / FETCH FIRST)
+        Posicao_Plan := Pos('ORDER BY', MemScript.Text);
+        if (Posicao_Plan = 0) and (FVersao.LimiteFim(Trim(EdtFirst.Text)) <> '') and
+          not ChkTodos.Checked then
+          Posicao_Plan := Pos(FVersao.LimiteFim(Trim(EdtFirst.Text)), MemScript.Text);
+
+        if Posicao_Plan > 0 then
         begin
           Query_Relatorio.SQL.Text := Copy(MemScript.Text, 1,
-            Pos('ORDER BY', MemScript.Text) - 1) + #13 + MemPlan.Text + #13 +
-            Copy(MemScript.Text, Pos('ORDER BY', MemScript.Text),
-            Length(MemScript.Text));
+            Posicao_Plan - 1) + #13 + MemPlan.Text + #13 +
+            Copy(MemScript.Text, Posicao_Plan, Length(MemScript.Text));
         end
         else
         begin
@@ -1139,15 +1142,16 @@ begin
     if LstTabelas_Selecionadas.ItemIndex <> -1 then
     begin
       Query.SQL.Text :=
-        ' SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$RELATION_NAME = '''
-        + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] +
-        ''' ORDER BY RDB$FIELD_POSITION';
+        ' SELECT RDB$FIELD_NAME FROM RDB$RELATION_FIELDS' +
+        ' WHERE (RDB$SYSTEM_FLAG = 0 OR RDB$SYSTEM_FLAG IS NULL) AND RDB$RELATION_NAME = '
+        + QuotedStr(Nome_Tabela(LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex])) +
+        ' ORDER BY RDB$FIELD_POSITION';
       Query.Open;
 
       while not Query.Eof do
       begin
         LstCampos_Filtro.Items.Add
-          (Trim(LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex]
+          (Trim(Apelido_Tabela(LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex])
           + '.' + Query.FieldByName('RDB$FIELD_NAME').AsString));
 
         Query.Next;
@@ -1367,6 +1371,13 @@ procedure TFrmPrincipal.CxoAfterConnect(Sender: TObject);
 begin
   pnlTables.Enabled := True;
   PageControlSQL.Enabled := True;
+
+  // Versão do Firebird em que o banco foi criado, para gerar SQL compatível
+  FVersao := TFirebirdVersao.Detectar(Cxo);
+  if FVersao.Detectada then
+    Panel9.Caption := 'Conexões - ' + FVersao.Descricao
+  else
+    Panel9.Caption := 'Conexões';
 end;
 
 procedure TFrmPrincipal.LstTabelas_SelecionadasClick(Sender: TObject);
@@ -1374,9 +1385,10 @@ begin
   if LstTabelas_Selecionadas.ItemIndex <> -1 then
   begin
     Query.SQL.Text :=
-      ' SELECT * FROM RDB$RELATION_FIELDS WHERE RDB$SYSTEM_FLAG = 0 AND RDB$RELATION_NAME = '''
-      + LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex] +
-      ''' ORDER BY RDB$FIELD_POSITION';
+      ' SELECT RDB$FIELD_NAME FROM RDB$RELATION_FIELDS' +
+      ' WHERE (RDB$SYSTEM_FLAG = 0 OR RDB$SYSTEM_FLAG IS NULL) AND RDB$RELATION_NAME = '
+      + QuotedStr(Nome_Tabela(LstTabelas_Selecionadas.Items[LstTabelas_Selecionadas.ItemIndex])) +
+      ' ORDER BY RDB$FIELD_POSITION';
     Query.Open;
 
     LstCampos.Clear;
@@ -1402,7 +1414,12 @@ begin
 end;
 
 procedure TFrmPrincipal.Button4Click(Sender: TObject);
+var
+  Tabela, Apelido: String;
 begin
+  if CmbTabelas.ItemIndex = -1 then
+    Exit;
+
   if not Verifica_View then
   begin
     MessageDlg('Uma view só pode ser selecionada sozinha', MtInformation,
@@ -1410,10 +1427,26 @@ begin
     Exit;
   end;
 
-  if LstTabelas_Selecionadas.Items.IndexOf
-    (CmbTabelas.Items[CmbTabelas.ItemIndex]) = -1 then
+  Tabela := CmbTabelas.Items[CmbTabelas.ItemIndex];
+
+  if not Tabela_Selecionada(Tabela) then
   begin
-    LstTabelas_Selecionadas.Items.Add(CmbTabelas.Items[CmbTabelas.ItemIndex]);
+    LstTabelas_Selecionadas.Items.Add(Tabela);
+  end
+  else
+  begin
+    // A mesma tabela pode entrar mais de uma vez (ex.: dois campos que referenciam
+    // PESSOA). Cada ocorrência recebe um apelido e usa outra chave estrangeira
+    Apelido := Novo_Apelido(Tabela);
+
+    if MessageDlg('A tabela ' + Tabela + ' já foi adicionada.' + sLineBreak +
+      'Deseja adicioná-la novamente com o apelido ' + Apelido + '?' + sLineBreak +
+      sLineBreak + 'Use quando mais de um campo referencia esta tabela: ' +
+      'cada ocorrência será ligada por uma chave estrangeira diferente.',
+      MtConfirmation, [mbyes, mbno], 0) = MrYes then
+    begin
+      LstTabelas_Selecionadas.Items.Add(Tabela + ' ' + Apelido);
+    end;
   end;
 end;
 
@@ -1427,15 +1460,6 @@ begin
   end;
 
   LstCampos.Clear;
-end;
-
-procedure TFrmPrincipal.Query_JoinFilterRecord(DataSet: TDataSet; var Accept: Boolean);
-begin
-  if (LstTabelas_Selecionadas.ItemIndex <> -1) and (Indice_Filtro <> -1) then
-  begin
-    Accept := (LstTabelas_Selecionadas.Items[Indice_Filtro]
-      = Trim(Query_Join.FieldByName('TABELA_RELACIONADA').AsString));
-  end;
 end;
 
 procedure TFrmPrincipal.Button6Click(Sender: TObject);
